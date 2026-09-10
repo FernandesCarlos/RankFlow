@@ -14,7 +14,9 @@ Inicialmente, o RankFlow utilizará o **Codeforces** como principal plataforma p
 
 ## Problema
 
-Plataformas de programação competitiva disponibilizam muitas informações sobre usuários, problemas, submissões e competições, porém esses dados ficam distribuídos em diferentes páginas e nem sempre são apresentados de maneira simples e visual. Além disso, criar treinos personalizados, comparar o desempenho entre amigos e acompanhar competições próprias pode exigir diferentes ferramentas ou processos manuais.
+Plataformas de programação competitiva disponibilizam muitas informações sobre usuários, problemas, submissões e competições, porém esses dados ficam distribuídos em diferentes páginas e nem sempre são apresentados de maneira simples e visual.
+
+Além disso, criar treinos personalizados, comparar o desempenho entre amigos e acompanhar competições próprias pode exigir diferentes ferramentas ou processos manuais.
 
 O RankFlow busca centralizar essas funcionalidades em uma única aplicação mobile.
 
@@ -24,25 +26,27 @@ O RankFlow busca centralizar essas funcionalidades em uma única aplicação mob
 
 O aplicativo é voltado para:
 
-- Pessoas interessadas em programação competitiva;
-- Competidores de maratonas de programação;
-- Usuários de plataformas como Codeforces;
-- Pessoas que desejam acompanhar sua evolução em algoritmos e resolução de problemas;
-- Grupos que desejam realizar treinos e competições entre amigos.
+* Pessoas interessadas em programação competitiva;
+* Competidores de maratonas de programação;
+* Usuários de plataformas como Codeforces;
+* Pessoas que desejam acompanhar sua evolução em algoritmos e resolução de problemas;
+* Grupos que desejam realizar treinos e competições entre amigos.
 
 ---
 
 ## Objetivo
 
-O principal objetivo do RankFlow é facilitar o treinamento em programação competitiva por meio de uma aplicação mobile que reúna:
+O principal objetivo do RankFlow é facilitar o treinamento em programação competitiva por meio de uma aplicação mobile que reúna informações de desempenho e ferramentas voltadas para treinamento e competição.
 
-- Estatísticas de desempenho;
-- Análise de desempenho por tags;
-- Histórico de evolução e rating;
-- Comparação entre usuários;
-- Criação de treinos personalizados;
-- Competições entre amigos;
-- Acompanhamento de placares.
+Entre os principais recursos estão:
+
+* Estatísticas de desempenho;
+* Análise de desempenho por tags;
+* Histórico de evolução e rating;
+* Comparação entre usuários;
+* Criação de treinos personalizados;
+* Competições entre amigos;
+* Acompanhamento de placares.
 
 ---
 
@@ -50,208 +54,151 @@ O principal objetivo do RankFlow é facilitar o treinamento em programação com
 
 Entre as principais funcionalidades estão:
 
-- Consulta de informações do perfil de um competidor;
-- Visualização do rating atual;
-- Visualização do histórico de rating;
-- Quantidade de problemas resolvidos;
-- Estatísticas de desempenho por tags, como:
-  - Dynamic Programming;
-  - Grafos;
-  - Matemática;
-  - Greedy;
-  - Geometria;
-- Visualização do nível de domínio por tag;
-- Identificação dos assuntos com melhor e pior desempenho;
-- Acompanhamento de amigos;
-- Criação de treinos personalizados;
-- Filtro de problemas por dificuldade;
-- Filtro de problemas por tags;
-- Seleção de participantes para treinos;
-- Criação de competições personalizadas;
-- Acompanhamento de placares;
+* Cadastro e autenticação de usuários;
+* Vinculação de uma conta do Codeforces;
+* Consulta de informações do perfil de um competidor;
+* Visualização do rating atual e histórico de rating;
+* Visualização da quantidade de problemas resolvidos;
+* Estatísticas de desempenho por tags;
+* Identificação dos assuntos com melhor e pior desempenho;
+* Acompanhamento de amigos;
+* Busca de usuários;
+* Criação de treinos personalizados;
+* Filtro de problemas por dificuldade;
+* Filtro de problemas por tags;
+* Seleção de participantes;
+* Criação de competições personalizadas;
+* Acompanhamento do placar das competições.
 
 ---
 
 # Telas previstas
 
-## 1. Início
+## Início
 
-![Tela de início](images/telas/Início.png)
+A tela inicial apresentará um resumo do perfil e do desempenho recente do usuário.
 
-*Figura 1 — Tela inicial do RankFlow, apresentando um resumo do perfil e do desempenho recente do usuário.*
+Entre as principais informações poderão estar:
 
-A tela de **Início** apresenta uma visão geral do perfil e do desempenho do usuário na programação competitiva. Seu objetivo é permitir que o competidor visualize rapidamente suas principais informações e acompanhe sua evolução.
-
-A tela apresenta:
-
-- Nome e handle do usuário;
-- Nível atual do competidor;
-- Rating atual e maior rating alcançado;
-- Quantidade de problemas resolvidos;
-- Streak de treinamento;
-- Quantidade de competições realizadas;
-- Gráfico com a evolução recente do desempenho.
-
-A partir da barra de navegação inferior, o usuário pode acessar as áreas de **Início**, **Amigos**, **Treino** e **Placar**.
-
-A área de **Estatísticas** poderá ser acessada a partir da tela inicial, permitindo aprofundar a análise do desempenho exibido no resumo do usuário.
+* Handle;
+* Classificação do competidor;
+* Rating atual;
+* Maior rating alcançado;
+* Quantidade de problemas resolvidos;
+* Streak de treinamento;
+* Participação em competições;
+* Evolução recente do desempenho.
 
 ---
 
-## 2. Amigos
+## Amigos
 
-![Tela de amigos](images/telas/Amigos.png)
+A tela de amigos permitirá buscar e acompanhar outros competidores.
 
-*Figura 2 — Tela de amigos do RankFlow, utilizada para buscar usuários e acompanhar o desempenho de outros competidores.*
+Ela poderá apresentar:
 
-A tela de **Amigos** permite acompanhar outros competidores adicionados pelo usuário. Ela oferece uma visão rápida do desempenho de cada amigo e facilita a comparação entre participantes.
-
-A tela apresenta:
-
-- Campo de busca para localizar usuários pelo handle;
-- Lista de amigos adicionados;
-- Handle de cada competidor;
-- Nível ou classificação do usuário;
-- Rating atual;
-- Informações sobre atividades recentes, como problemas resolvidos ou participação em competições.
-
-Essa área poderá ser utilizada futuramente como ponto de acesso para visualizar o perfil completo de um amigo e comparar estatísticas entre usuários.
+* Campo de busca por handle;
+* Lista de amigos;
+* Rating;
+* Classificação;
+* Informações sobre atividades recentes.
 
 ---
 
-## 3. Criar treino
+## Criar treino
 
-![Tela de criar treino](images/telas/Criar-competição.png)
+A tela de criação de treino permitirá configurar uma sessão personalizada de treinamento.
 
-*Figura 3 — Tela de criação de treino, permitindo selecionar participantes, dificuldade, quantidade de problemas e tags.*
+O usuário poderá definir:
 
-A tela de **Criar treino** permite configurar uma sessão de treinamento ou competição personalizada. O usuário pode definir os participantes e escolher critérios para selecionar os problemas que serão utilizados.
+* Participantes;
+* Faixa de dificuldade;
+* Quantidade de problemas;
+* Tags;
+* Critérios para seleção dos problemas.
 
-Entre as configurações disponíveis estão:
-
-- Seleção dos participantes;
-- Inclusão de amigos no treino;
-- Definição da faixa de dificuldade dos problemas;
-- Escolha da quantidade de problemas;
-- Seleção de tags, como:
-  - Dynamic Programming;
-  - Grafos;
-  - Matemática;
-  - Greedy;
-  - Outras categorias;
-- Critérios para geração dos problemas.
-
-Após definir os critérios, o usuário pode utilizar a opção **Gerar problemas**, fazendo com que o sistema selecione problemas compatíveis com as configurações escolhidas.
+Após a configuração, o sistema poderá selecionar problemas compatíveis com os critérios escolhidos.
 
 ---
 
-## 4. Placar ao vivo
+## Placar
 
-![Tela de placar ao vivo](images/telas/Placar-ao-vivo.png)
+A tela de placar apresentará o desempenho dos participantes durante uma competição ou treino.
 
-*Figura 4 — Tela de placar ao vivo, apresentando posições, pontuações e atualizações dos participantes durante uma competição.*
+Poderão ser exibidos:
 
-A tela de **Placar ao vivo** é responsável por apresentar o andamento de uma competição em tempo real.
-
-Nela, o usuário poderá visualizar:
-
-- Identificação do treino ou competição;
-- Tempo restante;
-- Estado atual da competição;
-- Posição de cada participante;
-- Nome dos competidores;
-- Pontuação acumulada;
-- Problemas resolvidos;
-- Atualizações recentes da competição;
-- Pontuação obtida em cada nova submissão aceita.
-
-A parte inferior da tela apresenta também o estado dos problemas da competição, permitindo identificar quais já foram resolvidos e quais ainda estão pendentes.
-
-As informações poderão ser atualizadas em tempo real por meio da comunicação entre o aplicativo e o backend.
+* Posição;
+* Participantes;
+* Pontuação;
+* Problemas resolvidos;
+* Tempo restante;
+* Atualizações da competição.
 
 ---
 
-## 5. Estatísticas
+## Estatísticas
 
-![Tela de estatísticas](images/telas/Estatísticas.png)
+A área de estatísticas permitirá analisar o desempenho do usuário com maior profundidade.
 
-*Figura 5 — Tela de estatísticas do RankFlow, apresentando o desempenho do usuário por tags e insights sobre sua evolução.*
+Poderá apresentar informações como:
 
-A tela de **Estatísticas** permite analisar com mais detalhes o desempenho do usuário e identificar os assuntos em que possui maior ou menor domínio.
+* Desempenho por tags;
+* Evolução do rating;
+* Histórico de competições;
+* Problemas resolvidos;
+* Pontos fortes e assuntos que precisam de mais treinamento.
 
-A tela apresenta uma análise do desempenho por tags, mostrando o nível de domínio do usuário em categorias como:
+---
 
-- Grafos;
-- Dynamic Programming;
-- Matemática;
-- Greedy;
-- Geometria.
+## Perfil
 
-Cada categoria possui uma representação visual do desempenho, permitindo identificar rapidamente os temas em que o usuário apresenta melhores resultados e aqueles que ainda precisam de maior treinamento.
+A tela de perfil reunirá informações do usuário e sua conta competitiva.
 
-A tela também apresenta **insights de desempenho**, destacando informações relevantes sobre a evolução recente do competidor, como a categoria em que apresentou maior melhoria.
+Poderá apresentar:
 
-Futuramente, essa área também poderá apresentar análises relacionadas ao histórico de rating, quantidade de problemas resolvidos por período e desempenho por nível de dificuldade.
+* Nome;
+* Handle;
+* Rating;
+* Classificação;
+* Estatísticas gerais;
+* Conta do Codeforces vinculada.
 
 ---
 
 # Fluxo básico de navegação
 
-A aplicação contará com uma barra de navegação inferior, permitindo acesso às principais áreas:
-
-- Início;
-- Amigos;
-- Criar treino;
-- Placar.
-
-A tela de **Estatísticas** será acessada a partir da área de início, funcionando como uma visão detalhada dos dados de desempenho do usuário.
+A aplicação contará com uma navegação principal entre as áreas de:
 
 ```text
 Início
 │
-├── Resumo do perfil
-├── Rating atual
-├── Problemas resolvidos
-├── Streak de treinamento
-├── Competições realizadas
-└── Estatísticas
-
-Amigos
+├── Perfil
+├── Estatísticas
 │
-├── Visualizar amigos
-└── Buscar usuários
-
-Criar treino
+├── Amigos
 │
-├── Selecionar participantes
-├── Definir dificuldade
-├── Escolher quantidade de problemas
-├── Selecionar tags
-└── Gerar problemas
-        ↓
-  Iniciar competição
-        ↓
-   Placar ao vivo
-
-Placar
-└── Acompanhar competição
+├── Criar treino
+│
+└── Placar
 ```
 
-Ao criar um treino, o fluxo será sequencial:
+O fluxo para criação de um treino poderá seguir a sequência:
 
 ```text
 Configurar treino
       ↓
 Selecionar participantes
       ↓
-Definir problemas
+Definir dificuldade e tags
       ↓
-Gerar problemas
+Selecionar problemas
       ↓
 Iniciar competição
       ↓
-Placar ao vivo
+Placar
 ```
+
+Também haverá um fluxo de autenticação e vinculação de conta para permitir que o usuário associe seu perfil do RankFlow a uma conta de uma plataforma de programação competitiva.
 
 ---
 
@@ -261,11 +208,15 @@ Placar ao vivo
 
 O aplicativo será desenvolvido utilizando:
 
-- **Flutter**
+* **React Native**
+* **Expo**
+* **TypeScript**
 
-O Flutter foi escolhido por permitir o desenvolvimento para Android e iOS utilizando praticamente a mesma base de código, reduzindo a necessidade de manter projetos separados.
+O React Native permitirá desenvolver uma aplicação mobile para Android e iOS utilizando uma base de código compartilhada.
 
-Outro ponto importante é sua facilidade de integração com APIs externas, necessária para o funcionamento do RankFlow.
+O **Expo** será utilizado para facilitar a configuração, desenvolvimento, execução e testes da aplicação.
+
+O **TypeScript** será utilizado para auxiliar na organização do código e na definição de tipos.
 
 ---
 
@@ -273,84 +224,65 @@ Outro ponto importante é sua facilidade de integração com APIs externas, nece
 
 O backend será desenvolvido utilizando:
 
-- **Python + FastAPI**
+* **Python**
+* **FastAPI**
 
-O **FastAPI** será utilizado para construir a API responsável pela comunicação entre o aplicativo mobile, o banco de dados e serviços externos.
+O FastAPI será responsável pela construção da API utilizada para comunicação entre o aplicativo, o banco de dados e serviços externos.
 
-A escolha do FastAPI permite desenvolver uma API moderna utilizando Python, com tipagem, validação automática de dados, documentação automática com Swagger/OpenAPI e suporte a operações assíncronas.
+Entre as responsabilidades previstas para o backend estão:
 
-Entre as responsabilidades do backend estarão:
-
-- Gerenciamento dos dados próprios do RankFlow;
-- Gerenciamento de usuários;
-- Gerenciamento de amigos;
-- Criação e gerenciamento de competições;
-- Gerenciamento dos participantes;
-- Geração de treinos;
-- Comunicação com o banco de dados;
-- Atualização dos placares;
-- Integração com a API do Codeforces;
+* Gerenciamento de usuários;
+* Gerenciamento de amigos;
+* Criação e gerenciamento de treinos e competições;
+* Comunicação com o banco de dados;
+* Integração com plataformas externas;
+* Processamento das estatísticas;
+* Atualização das informações utilizadas pela aplicação.
 
 ---
 
 ## Banco de dados
 
-O banco de dados utilizado será:
+O banco de dados previsto para o projeto é:
 
-- **PostgreSQL**
+* **PostgreSQL**
 
-O PostgreSQL será responsável pelo armazenamento persistente dos dados próprios da aplicação.
+O PostgreSQL será responsável principalmente pelo armazenamento persistente dos dados próprios da aplicação, como:
 
-Entre os dados que poderão ser armazenados estão:
-
-- Usuários;
-- Contas vinculadas a plataformas de programação competitiva;
-- Amigos;
-- Competições;
-- Participantes;
-- Problemas selecionados;
-- Configurações dos treinos;
-- Resultados;
-- Dados necessários para composição do histórico de desempenho.
-
-As estatísticas exibidas na aplicação poderão ser calculadas a partir das submissões, ratings, problemas e histórico do usuário.
+* Usuários;
+* Contas vinculadas;
+* Amigos;
+* Treinos;
+* Competições;
+* Participantes;
+* Problemas selecionados;
+* Resultados.
 
 ---
 
 # Integração com APIs externas
 
-A aplicação necessitará de comunicação com APIs externas.
+Inicialmente, será utilizada a **API pública do Codeforces** para obter dados relacionados aos usuários e à programação competitiva.
 
-Inicialmente, será utilizada a **API pública do Codeforces** para obter informações relacionadas à programação competitiva.
+Entre os dados que poderão ser utilizados estão:
 
-Entre os dados utilizados estão:
+* Perfil do usuário;
+* Rating;
+* Histórico de rating;
+* Submissões;
+* Problemas;
+* Tags;
+* Competições.
 
-- Informações de usuários;
-- Rating atual;
-- Histórico de rating;
-- Submissões;
-- Problemas;
-- Tags;
-- Competições;
+Essas informações poderão ser utilizadas para gerar estatísticas e auxiliar na criação de treinos personalizados.
 
-Esses dados também serão utilizados pelo backend para calcular as estatísticas apresentadas na aplicação, como desempenho por tags, evolução de rating e desempenho por dificuldade.
-
-Alguns endpoints disponíveis na API do Codeforces que poderão ser utilizados são:
-
-```text
-/user.info
-/user.status
-/user.rating
-/problemset.problems
-```
+Futuramente, outras plataformas poderão ser integradas, desde que ofereçam meios adequados de acesso aos dados.
 
 ---
 
 # Forma prevista de armazenamento de dados
 
-O RankFlow utilizará o **PostgreSQL** como banco de dados principal para o armazenamento persistente das informações próprias da aplicação.
-
-Os dados serão divididos em três grupos principais:
+Os dados poderão ser divididos em três grupos principais:
 
 ```text
 Dados do RankFlow
@@ -359,13 +291,12 @@ Dados do RankFlow
 ├── Treinos
 ├── Competições
 ├── Participantes
-├── Problemas selecionados
 └── Resultados
 
 Dados externos
-├── Perfil do Codeforces
+├── Perfil
 ├── Rating
-├── Histórico de rating
+├── Histórico
 ├── Submissões
 ├── Problemas
 └── Tags
@@ -377,50 +308,35 @@ Dados processados
 └── Estatísticas gerais
 ```
 
-### Dados próprios da aplicação
+Os dados próprios do RankFlow serão armazenados no PostgreSQL.
 
-Informações criadas dentro do RankFlow, como usuários, amizades, treinos e competições, serão armazenadas de forma persistente no PostgreSQL.
+Os dados provenientes de plataformas externas poderão ser consultados conforme necessário, enquanto informações utilizadas com frequência poderão futuramente utilizar mecanismos de cache.
 
-### Dados provenientes do Codeforces
-
-Os dados obtidos pela API do Codeforces poderão ser consultados quando necessários. Inicialmente, não será necessário armazenar permanentemente todas as informações externas no banco de dados.
-
-Informações consultadas com frequência poderão ser armazenadas temporariamente ou em **cache**, reduzindo a quantidade de requisições realizadas à API externa.
-
-### Dados processados
-
-As estatísticas apresentadas pelo RankFlow serão calculadas pelo backend a partir dos dados obtidos do Codeforces, como submissões, problemas, tags e histórico de rating.
-
-Essas informações poderão ser calculadas sob demanda ou armazenadas temporariamente quando necessário para melhorar o desempenho da aplicação.
-
-Dessa forma, o PostgreSQL ficará principalmente responsável pelos dados próprios do RankFlow, enquanto dados externos e estatísticas derivadas poderão ser consultados ou processados conforme a necessidade.
+As estatísticas poderão ser calculadas pelo backend a partir das informações obtidas dessas plataformas.
 
 ---
+
 # Arquitetura inicial
 
-A arquitetura inicial prevista será:
+A arquitetura prevista para o projeto será:
 
 ```text
                 Codeforces API
                       │
                       ▼
-Flutter ─────────► FastAPI
+React Native + Expo ─► FastAPI
                       │
                       ▼
                   PostgreSQL
 ```
 
-O aplicativo **Flutter** será responsável principalmente pela interface e interação com o usuário.
+O aplicativo desenvolvido com **React Native e Expo** será responsável principalmente pela interface e interação com o usuário.
 
-O backend **FastAPI** será responsável pelas regras de negócio, processamento de informações, comunicação com o banco de dados e integração com APIs externas.
+O **FastAPI** será responsável pelas regras de negócio, processamento das informações, comunicação com APIs externas e acesso ao banco de dados.
 
-O **PostgreSQL** será utilizado para persistir os dados próprios da aplicação.
+O **PostgreSQL** será responsável pela persistência dos dados próprios da aplicação.
 
-Futuramente, poderão ser adicionadas integrações com outras plataformas, como:
-
-- AtCoder;
-- beecrowd;
-- Outras plataformas que disponibilizem meios oficiais de acesso aos dados.
+Futuramente, poderão ser adicionadas integrações com outras plataformas de programação competitiva.
 
 ---
 
@@ -434,15 +350,21 @@ https://github.com/FernandesCarlos/RankFlow
 
 # Estrutura inicial de diretórios
 
-A estrutura inicial prevista para o projeto será:
+Uma organização inicial prevista para o projeto é:
 
 ```text
 RankFlow/
 │
-├── mobile/
-├── backend/
-├── docs/
+├── src/
+│   ├── app/
+│   ├── components/
+│   ├── services/
+│   └── theme/
 │
+├── docs/
 ├── README.md
+├── package.json
 └── .gitignore
 ```
+
+A estrutura poderá ser expandida conforme novas funcionalidades forem adicionadas ao projeto.
