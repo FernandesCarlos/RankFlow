@@ -5,7 +5,8 @@ Aplicação de demonstração para programação competitiva, desenvolvida com *
 ## Entrega da Etapa 3
 
 - [Documentação completa: navegação, UX, acessibilidade e testes](docs/etapa-03.md)
-- [Versão identificada pela tag etapa-03](https://github.com/FernandesCarlos/RankFlow/tree/etapa-03)
+- [Código da Etapa 3](https://github.com/FernandesCarlos/RankFlow/tree/feature/etapa-03)
+- Tag exigida: `etapa-03`. Criada localmente; publicação remota pendente. Veja os comandos na documentação.
 - [Documentação anterior — Etapa 2](docs/etapa-02.md)
 - [Proposta do projeto](docs/proposta.md)
 

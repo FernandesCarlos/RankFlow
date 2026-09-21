@@ -1,7 +1,7 @@
 # Etapa 3 — Navegação, UX e acessibilidade
 
 **Repositório:** https://github.com/FernandesCarlos/RankFlow  
-**Tag da entrega:** `etapa-03`
+**Tag exigida:** `etapa-03` (criada localmente; publicação remota pendente)
 
 ## Objetivo e escopo
 
@@ -161,17 +161,25 @@ TypeScript, testes de domínio, testes de navegação e exportação web foram e
 
 ## Versão da entrega
 
-A tag `etapa-03` identifica o código e a documentação desta etapa no mesmo repositório das etapas anteriores. Para obter a entrega:
+O código está publicado na branch `feature/etapa-03`, no mesmo repositório das etapas anteriores. A tag `etapa-03` foi criada no checkout local, mas não pôde ser enviada: o Git do terminal não tinha credenciais, e o conector disponível permitiu publicar a branch, mas não criar a tag. A exigência da tag remota permanece pendente.
+
+Para obter o código e publicar a tag usando seu Git autenticado:
 
 ```bash
-git clone https://github.com/FernandesCarlos/RankFlow.git
+git clone --branch feature/etapa-03 https://github.com/FernandesCarlos/RankFlow.git
 cd RankFlow
-git checkout etapa-03
 npm ci
 npm start
 ```
 
-Não é necessário recriar ou sobrescrever a tag ao executar o projeto.
+Em um clone existente, primeiro execute `git fetch origin feature/etapa-03`. Crie a tag somente se ela ainda não existir:
+
+```bash
+git tag -a etapa-03 origin/feature/etapa-03 -m "Entrega da Etapa 3: navegação, UX e acessibilidade"
+git push origin etapa-03
+```
+
+Não use `--force` nem sobrescreva uma tag existente. Após a publicação, a versão poderá ser consultada em `https://github.com/FernandesCarlos/RankFlow/tree/etapa-03`.
 
 ## Referências técnicas
 
