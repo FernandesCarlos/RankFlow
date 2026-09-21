@@ -1,32 +1,37 @@
+import { useApp } from '../../state/AppContext';
+import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Avatar,
   Card,
+  InfoBox,
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockLiveScoreboard, mockProfile } from '../../mocks';
+import { mockLiveScoreboard } from '../../mocks';
 import { router } from 'expo-router';
 
 
 export default function PlacarScreen() {
+  const { profile: mockProfile } = useApp();
   return (
     <Screen>
+      <InfoBox>Placar de exemplo: os valores são simulados e não atualizam em tempo real.</InfoBox>
       <View style={styles.top}>
         <View style={styles.headingBlock}>
-          <Text style={styles.title}>Placar ao vivo</Text>
+          <Text accessibilityRole="header" style={styles.title}>Placar ao vivo</Text>
           <Text style={styles.subtitle}>
             Treino #{mockLiveScoreboard.trainingNumber} • {mockLiveScoreboard.remainingTime} restantes
           </Text>
         </View>
-         <Pressable onPress={() => router.push('/perfil')}>
+         <Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
                   <Avatar initials={mockProfile.initials} size={40} />
                 </Pressable>
       </View>
 
       <View style={styles.liveBadge}>
-        <Text style={styles.liveText}>● AO VIVO</Text>
+        <Text style={styles.liveText}>● DEMONSTRAÇÃO</Text>
       </View>
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
@@ -115,11 +120,12 @@ const styles = StyleSheet.create({
   },
   liveText: {
     color: colors.danger,
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '800',
   },
   tableHeader: {
-    height: 46,
+    minHeight: 46,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
@@ -127,7 +133,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
   },
   tableRow: {
@@ -152,7 +158,7 @@ const styles = StyleSheet.create({
   solved: {
     color: colors.success,
     marginTop: 5,
-    fontSize: 12,
+    fontSize: 14,
   },
   points: {
     width: 68,
@@ -172,7 +178,7 @@ const styles = StyleSheet.create({
   },
   updateGain: {
     color: colors.success,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
   },
   problemRow: {

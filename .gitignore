@@ -16,3 +16,6 @@ expo-env.d.ts
 # generated native folders
 /android
 /ios
+
+.test-build/
+.worktrees/

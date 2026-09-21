@@ -1,3 +1,6 @@
+import { VerificationMissing } from '../../components/VerificationMissing';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -16,15 +19,18 @@ import { mockCodeforces } from '../../mocks';
 
 
 export default function SucessoScreen() {
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{
     handle?: string;
   }>();
 
-  const handle = params.handle ?? mockCodeforces.verifiedProfile.defaultHandle;
+  const handle = typeof params.handle === 'string' ? params.handle.trim() : '';
+  if (!handle) return <VerificationMissing />;
 
   return (
     <Screen>
-      <Header title="Conta verificada" onBack={() => router.back()} />
+      <Header title="Conta verificada" onBack={() => router.dismissTo(origin)} />
 
       <View style={styles.success}>
         <View style={styles.circle}>
@@ -32,7 +38,7 @@ export default function SucessoScreen() {
         </View>
 
         <Text style={styles.badge}>✓  VERIFICADO</Text>
-        <Text style={styles.title}>
+        <Text accessibilityRole="header" style={styles.title}>
           Sua conta do Codeforces foi verificada com sucesso
         </Text>
       </View>
@@ -71,29 +77,13 @@ export default function SucessoScreen() {
         </View>
       </Card>
 
-      <PrimaryButton
-        title="Concluir"
-        onPress={() =>
-          router.replace({
-            pathname: '/(auth)/cadastro',
-            params: {
-              verified: '1',
-              handle,
-            },
-          })
-        }
-      />
-
-      <OutlineButton
-        title="Ir para o perfil"
-        onPress={() => router.replace('/perfil')}
-      />
-
-      <TextButton
-        danger
-        title="Desvincular conta"
-        onPress={() => router.replace('/codeforces/verificar-conta')}
-      />
+      <InfoBox>Verificação simulada. Nenhuma conta real do Codeforces foi acessada.</InfoBox>
+      <PrimaryButton title="Concluir e voltar" onPress={() => {
+        setVerifiedHandle(handle);
+        if (authenticated) setProfile(current => ({ ...current, codeforcesHandle: handle }));
+        setNotice({ message: `Conta ${handle} verificada na demonstração.`, tone: 'success' });
+        router.dismissTo(origin);
+      }} />
     </Screen>
   );
 }
@@ -121,7 +111,7 @@ const styles = StyleSheet.create({
   badge: {
     color: colors.success,
     backgroundColor: colors.successSoft,
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '800',
     paddingHorizontal: 11,
     paddingVertical: 6,
@@ -150,12 +140,12 @@ const styles = StyleSheet.create({
   },
   rank: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
     marginTop: 4,
   },
   connected: {
     color: colors.success,
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: '800',
   },
   cardTitle: {
@@ -165,7 +155,7 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 3,
   },
   importRow: {
@@ -186,7 +176,7 @@ const styles = StyleSheet.create({
   importLabel: {
     flex: 1,
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
   },
   importValue: {
     color: colors.text,

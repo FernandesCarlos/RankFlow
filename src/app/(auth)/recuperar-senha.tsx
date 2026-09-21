@@ -1,3 +1,5 @@
+import { isEmail } from '../../services/forms';
+import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -12,30 +14,31 @@ import { colors } from '../../theme/colors';
 
 export default function RecuperarSenhaScreen() {
   const [email, setEmail] = useState('carlos@email.com');
+  const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
   return (
     <Screen>
       <Header
         title="Recuperar senha"
-        onBack={() => router.back()}
+        onBack={() => goBack('/(auth)/login')}
       />
 
-      <Text style={styles.title}>Vamos ajudar você a voltar</Text>
+      <Text accessibilityRole="header" style={styles.title}>Vamos ajudar você a voltar</Text>
 
       <View style={styles.iconCircle}>
         <Text style={styles.icon}>✉</Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Informe seu e-mail</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Informe seu e-mail</Text>
       <Text style={styles.description}>
-        Enviaremos um link para você redefinir sua senha com segurança.
+        Demonstração de recuperação de senha. Nenhum e-mail será enviado.
       </Text>
 
       <Field
         label="E-mail"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={value => { setEmail(value); setSent(false); setError(''); }}
         placeholder="carlos@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -43,17 +46,18 @@ export default function RecuperarSenhaScreen() {
 
       {sent ? (
         <InfoBox tone="success">
-          Link enviado para o e-mail informado.
+          Solicitação simulada com sucesso. Nenhum e-mail foi enviado.
         </InfoBox>
       ) : null}
 
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
         title="Enviar link"
-        onPress={() => setSent(true)}
+        onPress={() => { if (!isEmail(email)) { setError('Informe um e-mail válido, como nome@exemplo.com.'); return; } setError(''); setSent(true); }}
       />
 
       <InfoBox>
-        Não recebeu? Confira a caixa de spam ou tente novamente após alguns minutos.
+        Você pode voltar ao login usando o botão no topo da tela.
       </InfoBox>
     </Screen>
   );

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
+import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
+import React, { useState, useRef, useCallback } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Card,
   Field,
@@ -15,6 +18,8 @@ import { findCodeforcesUser } from '../../services/codeforces';
 import { mockCodeforces } from '../../mocks';
 
 export default function VerificarContaScreen() {
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const [handle, setHandle] = useState('');
   const [languageIndex, setLanguageIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -22,36 +27,38 @@ export default function VerificarContaScreen() {
 
   const language = mockCodeforces.languages[languageIndex];
 
+  const active = useRef(false);
+  const busy = useRef(false);
+  useFocusEffect(useCallback(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []));
   async function confirm() {
+    if (busy.current || !handle.trim()) return;
+    busy.current = true;
     setLoading(true);
     setError('');
-
-    const profile = await findCodeforcesUser(handle);
-
-    setLoading(false);
-
-    if (!profile) {
-      setError('Não encontramos esse usuário no Codeforces.');
-      return;
+    try {
+      const profile = await findCodeforcesUser(handle);
+      if (!active.current) return;
+      if (!profile) { setError('Não encontramos esse usuário. Confira o handle e tente novamente.'); return; }
+      router.push({ pathname: '/codeforces/conta-encontrada', params: {
+        handle: profile.handle, rating: String(profile.rating), ranking: profile.ranking,
+        memberSince: String(profile.memberSince), language,
+      } });
+    } catch {
+      if (active.current) setError('Não foi possível consultar a conta. Tente novamente.');
+    } finally {
+      busy.current = false;
+      if (active.current) setLoading(false);
     }
-
-    router.push({
-      pathname: '/codeforces/conta-encontrada',
-      params: {
-        handle: profile.handle,
-        rating: String(profile.rating),
-        ranking: profile.ranking,
-        memberSince: String(profile.memberSince),
-        language,
-      },
-    });
   }
 
   return (
     <Screen>
       <Header
         title="Verificar conta do Codeforces"
-        onBack={() => router.back()}
+        onBack={() => goBack(origin)}
       />
 
       <Text style={styles.subtitle}>
@@ -59,7 +66,7 @@ export default function VerificarContaScreen() {
       </Text>
 
       <InfoBox>
-        Como funciona a verificação? Precisamos confirmar que a conta realmente pertence a você. Por isso, vamos pedir uma submissão simples para validar.
+        Modo demonstração: a busca e a verificação são simuladas. Use “naoexiste” para testar uma conta não encontrada.
       </InfoBox>
 
       <Field
@@ -74,6 +81,8 @@ export default function VerificarContaScreen() {
       <Text style={styles.label}>Linguagem da submissão</Text>
 
       <Pressable
+        accessibilityLabel={`Linguagem da submissão: ${language}`}
+        accessibilityHint="Ative para selecionar a próxima linguagem"
         onPress={() =>
           setLanguageIndex((current) => (current + 1) % mockCodeforces.languages.length)
         }
@@ -83,7 +92,7 @@ export default function VerificarContaScreen() {
         <Text style={styles.caret}>⌄</Text>
       </Pressable>
 
-      <Text style={styles.sectionTitle}>?  O que acontece depois?</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>?  O que acontece depois?</Text>
 
       <Card>
         <Step
@@ -105,11 +114,12 @@ export default function VerificarContaScreen() {
 
       <PrimaryButton
         title={loading ? 'Procurando...' : 'Confirmar dados'}
-        disabled={!handle.trim() || loading}
+        disabled={!handle.trim()}
+        loading={loading}
         onPress={confirm}
       />
 
-      <TextButton title="Cancelar" onPress={() => router.back()} />
+      <TextButton title="Cancelar" onPress={() => goBack(origin)} />
     </Screen>
   );
 }
@@ -146,7 +156,8 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   select: {
-    height: 52,
+    minHeight: 52,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,

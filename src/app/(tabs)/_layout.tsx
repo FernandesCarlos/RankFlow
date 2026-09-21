@@ -1,3 +1,5 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import {
   CirclePlus,
@@ -8,22 +10,28 @@ import {
 import { colors } from '../../theme/colors';
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
+        tabBarActiveBackgroundColor: colors.primarySoft,
+        tabBarItemStyle: { minHeight: 48 },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
-          height: 70,
+          height: 64 + Math.max(0, fontScale - 1) * 24 + insets.bottom,
           paddingTop: 8,
-          paddingBottom: 8,
+          paddingBottom: Math.max(8, insets.bottom),
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: '600',
         },
       }}
@@ -68,12 +76,6 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="estatisticas"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

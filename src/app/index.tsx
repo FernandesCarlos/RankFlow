@@ -1,5 +1,6 @@
 import { Redirect } from 'expo-router';
-
+import { useApp } from '../state/AppContext';
 export default function Index() {
-  return <Redirect href="/(auth)/boas-vindas" />;
+  const { authenticated } = useApp();
+  return <Redirect href={authenticated ? '/(tabs)' : '/(auth)/boas-vindas'} />;
 }

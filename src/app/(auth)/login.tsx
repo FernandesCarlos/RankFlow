@@ -1,8 +1,12 @@
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   Field,
+  Header,
+  InfoBox,
   OutlineButton,
   PrimaryButton,
   Screen,
@@ -11,11 +15,20 @@ import {
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen() {
+  const { setAuthenticated, setNotice } = useApp();
+  const [error, setError] = useState('');
+  function enter() {
+    if (!login.trim() || !senha.trim()) { setError('Informe seu usuário e sua senha para continuar.'); return; }
+    setNotice({ message: 'Sessão de demonstração iniciada. Nenhuma credencial foi enviada.', tone: 'success' });
+    setAuthenticated(true);
+  }
   const [login, setLogin] = useState('carlos@email.com');
   const [senha, setSenha] = useState('');
 
   return (
     <Screen contentStyle={styles.container}>
+      <Header title="Login" onBack={() => goBack('/(auth)/boas-vindas')} />
+      <InfoBox>Modo demonstração: use qualquer usuário e uma senha fictícia.</InfoBox>
       <View style={styles.brandRow}>
         <View style={styles.logoCircle}>
           <Text style={styles.logoLetter}>R</Text>
@@ -23,7 +36,7 @@ export default function LoginScreen() {
         <Text style={styles.brand}>RankFlow</Text>
       </View>
 
-      <Text style={styles.title}>Entrar na sua conta</Text>
+      <Text accessibilityRole="header" style={styles.title}>Entrar na sua conta</Text>
       <Text style={styles.subtitle}>
         Acesse seu perfil e continue seus treinos.
       </Text>
@@ -53,9 +66,10 @@ export default function LoginScreen() {
         />
       </View>
 
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
         title="Entrar"
-        onPress={() => router.replace('/(tabs)')}
+        onPress={enter}
       />
 
       <View style={styles.dividerRow}>
@@ -69,15 +83,6 @@ export default function LoginScreen() {
         onPress={() => router.push('/(auth)/cadastro')}
       />
 
-      <Text style={styles.footer}>
-        Ainda não tem conta?{' '}
-        <Text
-          style={styles.link}
-          onPress={() => router.push('/(auth)/cadastro')}
-        >
-          Criar conta
-        </Text>
-      </Text>
     </Screen>
   );
 }

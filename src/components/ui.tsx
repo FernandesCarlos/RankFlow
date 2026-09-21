@@ -1,8 +1,10 @@
-import React, { ReactNode } from 'react';
+import { useIsFocused } from 'expo-router';
+import React, { ReactNode, useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
+  AccessibilityInfo,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +16,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AccessiblePressable as Pressable } from './AccessiblePressable';
+import { useApp } from '../state/AppContext';
 import { colors } from '../theme/colors';
 
 export function Screen({
@@ -38,12 +42,14 @@ export function Screen({
         styles.screenContent,
         {
           paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 28,
           paddingHorizontal: horizontalPadding,
           maxWidth: maxContentWidth,
         },
         contentStyle,
       ]}
     >
+      <SessionNotice />
       {children}
     </View>
   );
@@ -68,6 +74,16 @@ export function Screen({
   );
 }
 
+function SessionNotice() {
+  const { notice, setNotice } = useApp();
+  const focused = useIsFocused();
+  if (!notice || !focused) return null;
+  return <View>
+    <InfoBox tone={notice.tone} announce>{notice.message}</InfoBox>
+    <TextButton title="Fechar mensagem" onPress={() => setNotice(null)} />
+  </View>;
+}
+
 export function Header({
   title,
   subtitle,
@@ -83,6 +99,9 @@ export function Header({
     <View style={styles.header}>
       <Pressable
         onPress={onBack}
+        accessibilityLabel="Voltar para a tela anterior"
+        accessible={Boolean(onBack)}
+        importantForAccessibility={onBack ? 'auto' : 'no-hide-descendants'}
         disabled={!onBack}
         hitSlop={10}
         style={styles.headerSide}
@@ -91,7 +110,7 @@ export function Header({
       </Pressable>
 
       <View style={styles.headerCenter}>
-        {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
+        {title ? <Text accessibilityRole="header" style={styles.headerTitle}>{title}</Text> : null}
         {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
       </View>
 
@@ -113,7 +132,7 @@ export function Title({
 }) {
   return (
     <View style={{ marginBottom: 22 }}>
-      <Text style={[styles.title, centered && { textAlign: 'center' }]}>
+      <Text accessibilityRole="header" style={[styles.title, centered && { textAlign: 'center' }]}>
         {children}
       </Text>
       {subtitle ? (
@@ -125,34 +144,39 @@ export function Title({
   );
 }
 
-export function Field({
-  label,
-  ...props
-}: TextInputProps & { label: string }) {
-  return (
-    <View style={styles.fieldWrap}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        {...props}
-        placeholderTextColor={colors.subtle}
-        style={[styles.input, props.multiline && styles.multiline]}
-      />
-    </View>
-  );
+export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) {
+  const [focused, setFocused] = useState(false);
+  return <View style={styles.fieldWrap}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      {...props}
+      accessibilityLabel={props.accessibilityLabel ?? label}
+      accessibilityHint={error || props.accessibilityHint}
+      placeholderTextColor={colors.subtle}
+      onFocus={event => { setFocused(true); props.onFocus?.(event); }}
+      onBlur={event => { setFocused(false); props.onBlur?.(event); }}
+      style={[styles.input, props.multiline && styles.multiline, focused && { borderColor: colors.primary, borderWidth: 2 }, error && { borderColor: colors.danger }, props.style]}
+    />
+    {error ? <Text accessibilityRole="alert" style={{ color: colors.danger, marginTop: 6 }}>{error}</Text> : null}
+  </View>;
 }
 
 export function PrimaryButton({
   title,
   onPress,
   disabled,
+  loading = false,
 }: {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   return (
     <Pressable
-      disabled={disabled}
+      disabled={disabled || loading || !onPress}
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: Boolean(disabled || loading || !onPress), busy: loading }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.primaryButton,
@@ -160,6 +184,7 @@ export function PrimaryButton({
         pressed && !disabled && { opacity: 0.84 },
       ]}
     >
+      {loading ? <ActivityIndicator color="#FFFFFF" accessibilityLabel="Carregando" /> : null}
       <Text style={styles.primaryButtonText}>{title}</Text>
     </Pressable>
   );
@@ -168,15 +193,23 @@ export function PrimaryButton({
 export function OutlineButton({
   title,
   onPress,
+  disabled = false,
+  loading = false,
 }: {
   title: string;
   onPress?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled || loading || !onPress}
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || loading || !onPress, busy: loading }}
       style={({ pressed }) => [
         styles.outlineButton,
+        (disabled || loading) && { opacity: 0.5 },
         pressed && { backgroundColor: colors.primarySoft },
       ]}
     >
@@ -195,7 +228,7 @@ export function TextButton({
   danger?: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.textButton}>
+    <Pressable onPress={onPress} accessibilityLabel={title} disabled={!onPress} accessibilityState={{ disabled: !onPress }} style={styles.textButton}>
       <Text
         style={[
           styles.textButtonText,
@@ -221,10 +254,16 @@ export function Card({
 export function InfoBox({
   children,
   tone = 'info',
+  announce = false,
 }: {
   children: ReactNode;
   tone?: 'info' | 'success' | 'danger' | 'warning';
+  announce?: boolean;
 }) {
+  const shouldAnnounce = announce || tone === 'danger' || tone === 'success';
+  useEffect(() => {
+    if (shouldAnnounce && Platform.OS === 'ios' && typeof children === 'string') AccessibilityInfo.announceForAccessibility(children);
+  }, [children, shouldAnnounce]);
   const toneStyle =
     tone === 'success'
       ? { backgroundColor: colors.successSoft, borderColor: '#BBE8C9' }
@@ -235,14 +274,14 @@ export function InfoBox({
           : { backgroundColor: colors.primarySoft, borderColor: '#BFDBFE' };
 
   return (
-    <View style={[styles.infoBox, toneStyle]}>
+    <View accessible accessibilityRole={tone === 'danger' ? 'alert' : 'text'} accessibilityLiveRegion={shouldAnnounce ? 'polite' : 'none'} style={[styles.infoBox, toneStyle]}>
       <Text style={styles.infoText}>{children}</Text>
     </View>
   );
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text style={styles.sectionTitle}>{children}</Text>;
+  return <Text accessibilityRole="header" style={styles.sectionTitle}>{children}</Text>;
 }
 
 export function Stat({
@@ -315,9 +354,11 @@ export function SettingRow({
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      accessible={Boolean(onPress)}
+      accessibilityLabel={onPress ? [title, subtitle].filter(Boolean).join('. ') : undefined}
       style={styles.settingRow}
     >
-      <View style={styles.settingIcon}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.settingIcon}>
         <Text style={styles.settingIconText}>{icon ?? '•'}</Text>
       </View>
 
@@ -335,13 +376,15 @@ export function SettingRow({
 
 export function ProgressBar({
   value,
+  label = 'Progresso',
 }: {
   value: number;
+  label?: string;
 }) {
   const normalized = Math.max(0, Math.min(100, value));
 
   return (
-    <View style={styles.progressTrack}>
+    <View accessible accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: normalized }} style={styles.progressTrack}>
       <View
         style={[
           styles.progressFill,
@@ -376,7 +419,7 @@ const styles = StyleSheet.create({
   },
   headerSide: {
     width: 48,
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: 'center',
   },
   headerCenter: {
@@ -391,7 +434,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 2,
     textAlign: 'center',
   },
@@ -421,9 +464,10 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   input: {
-    height: 52,
+    minHeight: 52,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.subtle,
     borderRadius: 12,
     paddingHorizontal: 15,
     backgroundColor: colors.surface,
@@ -431,12 +475,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   multiline: {
-    height: 88,
+    minHeight: 88,
     paddingTop: 14,
     textAlignVertical: 'top',
   },
   primaryButton: {
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: colors.primary,
     alignItems: 'center',
@@ -449,7 +495,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   outlineButton: {
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.primary,
@@ -464,7 +512,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   textButton: {
-    minHeight: 44,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -504,7 +552,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 5,
   },
   statValue: {
@@ -554,7 +602,7 @@ const styles = StyleSheet.create({
   },
   settingSubtitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 3,
   },
   chevron: {

@@ -1,9 +1,15 @@
+import { useApp } from '../../state/AppContext';
+import { validateRegistration } from '../../services/forms';
+import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   Card,
   Field,
+  Header,
+  InfoBox,
+  TextButton,
   OutlineButton,
   PrimaryButton,
   Screen,
@@ -11,31 +17,32 @@ import {
 import { colors } from '../../theme/colors';
 
 export default function CadastroScreen() {
-  const params = useLocalSearchParams<{
-    verified?: string;
-    handle?: string;
-  }>();
-
+  const { setAuthenticated, setProfile, setNotice, verifiedHandle, setVerificationOrigin } = useApp();
+  const [error, setError] = useState('');
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
 
-  const valido =
-    nome.trim().length > 2 &&
-    email.includes('@') &&
-    senha.length >= 6 &&
-    senha === confirmacao;
-
-  const verified = params.verified === '1';
+  const verified = Boolean(verifiedHandle);
+  function register() {
+    const message = validateRegistration({ name: nome, email, password: senha, confirmation: confirmacao });
+    setError(message);
+    if (message) return;
+    setProfile(current => ({ ...current, name: nome.trim(), firstName: nome.trim().split(' ')[0], email: email.trim(), codeforcesHandle: verifiedHandle || current.codeforcesHandle }));
+    setNotice({ message: 'Conta de demonstração criada nesta sessão. Os dados não são enviados a um servidor.', tone: 'success' });
+    setAuthenticated(true);
+  }
 
   return (
     <Screen>
+      <Header title="Cadastro" onBack={() => goBack('/(auth)/boas-vindas')} />
+      <InfoBox>Cadastro demonstrativo. Use dados e senha fictícios.</InfoBox>
       <View style={styles.stepBadge}>
         <Text style={styles.stepBadgeText}>01 Cadastro</Text>
       </View>
 
-      <Text style={styles.title}>Criar conta</Text>
+      <Text accessibilityRole="header" style={styles.title}>Criar conta</Text>
       <Text style={styles.subtitle}>
         Junte-se ao RankFlow e evolua como programador.
       </Text>
@@ -83,35 +90,27 @@ export default function CadastroScreen() {
 
         <Text style={styles.codeforcesText}>
           {verified
-            ? `Conta ${params.handle ?? ''} verificada com sucesso.`
+            ? `Conta ${verifiedHandle} verificada com sucesso.`
             : 'Você poderá verificar sua conta do Codeforces no próximo passo.'}
         </Text>
 
         <OutlineButton
           title={verified ? 'Verificar outra conta' : 'Ir para verificação'}
-          onPress={() => router.push('/codeforces/verificar-conta')}
+          onPress={() => { setVerificationOrigin('cadastro'); router.push('/codeforces/verificar-conta'); }}
         />
       </Card>
 
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
         title="Criar conta"
-        disabled={!valido}
-        onPress={() => router.replace('/(tabs)')}
+        onPress={register}
       />
 
       <Text style={styles.notice}>
         Você precisará verificar sua conta do Codeforces para participar de arenas.
       </Text>
 
-      <Text style={styles.footer}>
-        Já tem uma conta?{' '}
-        <Text
-          style={styles.link}
-          onPress={() => router.replace('/(auth)/login')}
-        >
-          Entrar
-        </Text>
-      </Text>
+      <TextButton title="Já tenho conta: entrar" onPress={() => router.dismissTo('/(auth)/login')} />
     </Screen>
   );
 }
@@ -129,7 +128,7 @@ const styles = StyleSheet.create({
   stepBadgeText: {
     color: colors.primary,
     fontWeight: '800',
-    fontSize: 12,
+    fontSize: 14,
   },
   title: {
     color: colors.text,
@@ -156,7 +155,7 @@ const styles = StyleSheet.create({
   notice: {
     color: colors.muted,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 17,
     marginTop: 12,
   },

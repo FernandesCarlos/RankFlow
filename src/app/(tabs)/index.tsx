@@ -1,6 +1,8 @@
+import { useApp } from '../../state/AppContext';
+import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React from 'react';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Avatar,
   Card,
@@ -8,20 +10,21 @@ import {
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockHomePerformance, mockProfile } from '../../mocks';
+import { mockHomePerformance } from '../../mocks';
 
 export default function HomeScreen() {
+  const { profile: mockProfile } = useApp();
   return (
     <Screen>
       <View style={styles.top}>
         <View style={styles.headingBlock}>
-          <Text style={styles.title}>Olá, {mockProfile.firstName} 👋</Text>
+          <Text accessibilityRole="header" style={styles.title}>Olá, {mockProfile.firstName} 👋</Text>
           <Text style={styles.subtitle}>
             Seu treino de programação competitiva
           </Text>
         </View>
 
-        <Pressable onPress={() => router.push('/perfil')}>
+        <Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
           <Avatar initials={mockProfile.initials} size={40} />
         </Pressable>
       </View>
@@ -43,7 +46,7 @@ export default function HomeScreen() {
         </View>
       </Card>
 
-      <Text style={styles.sectionTitle}>Visão rápida</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Visão rápida</Text>
 
       <View style={styles.quickRow}>
         <QuickCard label="Problemas" value={String(mockProfile.problemsSolved)} />
@@ -51,7 +54,7 @@ export default function HomeScreen() {
         <QuickCard label="Contests" value={String(mockProfile.contests)} />
       </View>
 
-      <Pressable onPress={() => router.push('/(tabs)/estatisticas')}>
+      <Pressable accessibilityLabel="Ver estatísticas de desempenho" onPress={() => router.push('/estatisticas')}>
         <Card>
           <View style={styles.performanceHeader}>
             <View>
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
   },
   ratingLabel: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
   },
   rating: {
     color: colors.text,
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
   },
   maxRating: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
   },
   sectionTitle: {
     color: colors.text,
@@ -167,7 +170,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: 90,
     minWidth: 86,
-    height: 92,
+    minHeight: 92,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
@@ -177,7 +181,7 @@ const styles = StyleSheet.create({
   },
   quickLabel: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
   },
   quickValue: {
     color: colors.text,
