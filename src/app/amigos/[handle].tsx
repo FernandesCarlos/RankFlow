@@ -11,7 +11,8 @@ export default function AmigoScreen() {
   const friend = mockFriends.find(item => item.handle === handle);
   return <Screen>
     <Header title="Perfil do amigo" onBack={() => goBack('/(tabs)/amigos')} />
-<MockData label="Carregando perfil do amigo" resourceKey={handle}>    {friend ? <>
+      <MockData label="Carregando perfil do amigo" resourceKey={handle}>
+        {friend ? <>
       <Card>
         <Avatar initials={friend.initials} size={64} />
         <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 24, fontWeight: '800', marginVertical: 12 }}>{friend.handle}</Text>

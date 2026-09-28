@@ -30,7 +30,8 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-<MockData label="Carregando desempenho">      <Card>
+      <MockData label="Carregando desempenho">
+        <Card>
         <View style={styles.profileRow}>
           <Avatar initials={mockProfile.initials} size={52} />
 

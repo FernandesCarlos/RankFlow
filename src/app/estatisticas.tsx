@@ -65,7 +65,8 @@ export default function EstatisticasScreen() {
         </Pressable>
       </View>
 
-<MockData label="Carregando estatísticas">      {tab === 'tags' ? (
+      <MockData label="Carregando estatísticas">
+        {tab === 'tags' ? (
         <>
           <Text accessibilityRole="header" style={styles.sectionTitle}>Maestria por tags</Text>
 

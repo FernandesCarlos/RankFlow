@@ -47,7 +47,8 @@ export default function AmigosScreen() {
 
       <Text accessibilityRole="header" style={styles.sectionTitle}>Seus amigos</Text>
 
-<MockData label="Carregando amigos">      {!visible.length ? <InfoBox>Nenhum amigo encontrado. Tente outro handle ou limpe a busca.</InfoBox> : null}
+      <MockData label="Carregando amigos">
+        {!visible.length ? <InfoBox>Nenhum amigo encontrado. Tente outro handle ou limpe a busca.</InfoBox> : null}
       {visible.map((friend) => (
         <Pressable key={friend.handle} accessibilityLabel={`Ver perfil de ${friend.handle}, rating ${friend.rating}`} onPress={() => router.push({ pathname: '/amigos/[handle]', params: { handle: friend.handle } })}>
         <Card style={styles.friendCard}>
