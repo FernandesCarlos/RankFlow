@@ -1,3 +1,4 @@
+import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -6,18 +7,22 @@ import {
   Card,
   Field,
   Header,
+  InfoBox,
   PrimaryButton,
   Screen,
   TextButton,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockProfile } from '../../mocks';
+import { useApp } from '../../state/AppContext';
+import { validateProfile } from '../../services/forms';
 
 export default function EditarPerfilScreen() {
+  const { profile: mockProfile, setProfile, setNotice } = useApp();
+  const [error, setError] = useState('');
   const [nome, setNome] = useState(mockProfile.name);
   const [username, setUsername] = useState(mockProfile.username);
   const [email, setEmail] = useState(mockProfile.email);
-  const [bio, setBio] = useState(mockProfile.editBio);
+  const [bio, setBio] = useState(mockProfile.bio);
   const [handle, setHandle] = useState(mockProfile.codeforcesHandle);
 
   return (
@@ -25,7 +30,7 @@ export default function EditarPerfilScreen() {
       <Header
         title="Editar perfil"
         subtitle="Atualize suas informações"
-        onBack={() => router.back()}
+        onBack={() => goBack('/perfil')}
       />
 
       <Card style={styles.photoCard}>
@@ -34,11 +39,11 @@ export default function EditarPerfilScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.photoTitle}>Foto do perfil</Text>
           <Text style={styles.photoDescription}>
-            Alterar imagem ou usar iniciais
+            Avatar gerado a partir das iniciais do nome
           </Text>
         </View>
 
-        <TextButton title="Alterar foto" />
+
       </Card>
 
       <Field label="Nome" value={nome} onChangeText={setNome} />
@@ -73,9 +78,19 @@ export default function EditarPerfilScreen() {
         O handle é usado para sincronizar rating, submissões e histórico.
       </Text>
 
+      <InfoBox>Alterações são mantidas nesta sessão após salvar. Voltar sem salvar descarta a edição.</InfoBox>
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
         title="Salvar alterações"
-        onPress={() => router.back()}
+        onPress={() => {
+          const message = validateProfile({ name: nome, username, email });
+          setError(message);
+          if (message) return;
+          const initials = nome.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+          setProfile(current => ({ ...current, name: nome.trim(), firstName: nome.trim().split(' ')[0], username: username.trim(), email: email.trim(), bio, editBio: bio, codeforcesHandle: handle.trim(), initials }));
+          setNotice({ message: 'Perfil atualizado nesta sessão.', tone: 'success' });
+          goBack('/perfil');
+        }}
       />
     </Screen>
   );
@@ -93,7 +108,7 @@ const styles = StyleSheet.create({
   },
   photoDescription: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
     marginTop: 4,
   },
   competitiveTitle: {
@@ -104,7 +119,7 @@ const styles = StyleSheet.create({
   },
   helper: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 18,
     marginTop: 5,
     marginBottom: 12,

@@ -1,36 +1,43 @@
+import { MockData } from '../components/LoadingSkeleton';
+import { useApp } from '../state/AppContext';
+import { goBack } from '../navigation/actions';
+import { AccessiblePressable as Pressable } from '../components/AccessiblePressable';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Avatar,
   Card,
+  Header,
   ProgressBar,
   Screen,
-} from '../../components/ui';
-import { colors } from '../../theme/colors';
-import { mockProfile, mockStatistics } from '../../mocks';
+} from '../components/ui';
+import { colors } from '../theme/colors';
+import { mockStatistics } from '../mocks';
 import { router } from 'expo-router';
 
 
 export default function EstatisticasScreen() {
+  const { profile: mockProfile } = useApp();
   const [tab, setTab] = useState<'tags' | 'rating'>('tags');
 
   return (
     <Screen>
+      <Header title="Estatísticas" onBack={() => goBack()} />
       <View style={styles.top}>
         <View style={styles.headingBlock}>
-          <Text style={styles.title}>Estatísticas</Text>
+          <Text accessibilityRole="header" style={styles.title}>Estatísticas</Text>
           <Text style={styles.subtitle}>
             Entenda onde você está evoluindo
           </Text>
         </View>
-         <Pressable onPress={() => router.push('/perfil')}>
+         <Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
                   <Avatar initials={mockProfile.initials} size={40} />
                 </Pressable>
       </View>
 
       <View style={styles.tabs}>
         <Pressable
-          onPress={() => setTab('tags')}
+          accessibilityRole="tab" accessibilityState={{ selected: tab === 'tags' }} onPress={() => setTab('tags')}
           style={[styles.tab, tab === 'tags' && styles.tabActive]}
         >
           <Text
@@ -44,7 +51,7 @@ export default function EstatisticasScreen() {
         </Pressable>
 
         <Pressable
-          onPress={() => setTab('rating')}
+          accessibilityRole="tab" accessibilityState={{ selected: tab === 'rating' }} onPress={() => setTab('rating')}
           style={[styles.tab, tab === 'rating' && styles.tabActive]}
         >
           <Text
@@ -58,9 +65,10 @@ export default function EstatisticasScreen() {
         </Pressable>
       </View>
 
-      {tab === 'tags' ? (
+      <MockData label="Carregando estatísticas">
+        {tab === 'tags' ? (
         <>
-          <Text style={styles.sectionTitle}>Maestria por tags</Text>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>Maestria por tags</Text>
 
           <Card>
             {mockStatistics.mastery.map(({ tag, value }, index) => (
@@ -75,7 +83,7 @@ export default function EstatisticasScreen() {
                   <Text style={styles.tag}>{tag}</Text>
                   <Text style={styles.percent}>{value}%</Text>
                 </View>
-                <ProgressBar value={value} />
+                <ProgressBar value={value} label={`Maestria em ${tag}`} />
               </View>
             ))}
           </Card>
@@ -97,7 +105,7 @@ export default function EstatisticasScreen() {
         </>
       ) : (
         <>
-          <Text style={styles.sectionTitle}>Evolução de rating</Text>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>Evolução de rating</Text>
 
           <Card>
             <Text style={styles.ratingNow}>{mockStatistics.rating.current}</Text>
@@ -116,7 +124,7 @@ export default function EstatisticasScreen() {
           </Card>
         </>
       )}
-    </Screen>
+    </MockData></Screen>
   );
 }
 
@@ -144,7 +152,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
-    height: 42,
+    minHeight: 56,
     padding: 4,
     borderRadius: 12,
     backgroundColor: '#EEF2F7',

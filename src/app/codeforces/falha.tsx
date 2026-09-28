@@ -1,3 +1,6 @@
+import { VerificationMissing } from '../../components/VerificationMissing';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -15,17 +18,20 @@ import { mockCodeforces } from '../../mocks';
 
 
 export default function FalhaScreen() {
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{
     handle?: string;
     language?: string;
     problem?: string;
   }>();
 
+  if (typeof params.handle !== 'string' || !params.handle.trim()) return <VerificationMissing />;
   return (
     <Screen>
       <Header
         title="Falha na verificação"
-        onBack={() => router.back()}
+        onBack={() => goBack(origin)}
       />
 
       <View style={styles.hero}>
@@ -33,7 +39,7 @@ export default function FalhaScreen() {
           <Text style={styles.x}>✕</Text>
         </View>
 
-        <Text style={styles.title}>
+        <Text accessibilityRole="header" style={styles.title}>
           Não foi possível verificar a conta
         </Text>
         <Text style={styles.subtitle}>
@@ -63,28 +69,17 @@ export default function FalhaScreen() {
 
       <PrimaryButton
         title="Tentar novamente"
-        onPress={() =>
-          router.replace({
-            pathname: '/codeforces/conta-encontrada',
-            params: {
-              handle: params.handle ?? mockCodeforces.profile.handle,
-              language: params.language ?? mockCodeforces.languages[0],
-              rating: String(mockCodeforces.profile.rating),
-              ranking: mockCodeforces.profile.ranking,
-              memberSince: String(mockCodeforces.profile.memberSince),
-            },
-          })
-        }
+        onPress={() => router.dismissTo('/codeforces/verificar-conta')}
       />
 
       <OutlineButton
         title="Editar dados"
-        onPress={() => router.replace('/codeforces/verificar-conta')}
+        onPress={() => router.dismissTo('/codeforces/verificar-conta')}
       />
 
       <TextButton
-        title="Voltar ao cadastro"
-        onPress={() => router.replace('/(auth)/cadastro')}
+        title="Voltar à tela de origem"
+        onPress={() => router.dismissTo(origin)}
       />
     </Screen>
   );
@@ -172,7 +167,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
   },
   summaryValue: {
     color: colors.text,
@@ -192,6 +187,6 @@ const styles = StyleSheet.create({
     color: colors.muted,
     flex: 1,
     lineHeight: 19,
-    fontSize: 12,
+    fontSize: 14,
   },
 });

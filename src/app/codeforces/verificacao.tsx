@@ -1,5 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { VerificationMissing } from '../../components/VerificationMissing';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   Card,
@@ -16,6 +19,8 @@ import { mockCodeforces } from '../../mocks';
 const TOTAL = mockCodeforces.verificationTimeoutSeconds;
 
 export default function VerificacaoScreen() {
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{
     handle: string;
     language: string;
@@ -25,21 +30,21 @@ export default function VerificacaoScreen() {
   const [seconds, setSeconds] = useState(TOTAL);
   const [checking, setChecking] = useState(false);
 
+  const active = useRef(false);
+  const busy = useRef(false);
+  const deadline = useRef(Date.now() + TOTAL * 1000);
+  const [error, setError] = useState('');
+  useFocusEffect(useCallback(() => {
+    if (typeof params.handle !== 'string' || !params.handle.trim()) return;
+    active.current = true;
+    const timer = setInterval(() => setSeconds(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000))), 1000);
+    return () => { active.current = false; clearInterval(timer); };
+  }, []));
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((value) => Math.max(0, value - 1));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (seconds !== 0) return;
-
-    router.replace({
-      pathname: '/codeforces/falha',
-      params,
-    });
+    if (seconds === 0 && active.current) {
+      active.current = false;
+      router.replace({ pathname: '/codeforces/falha', params });
+    }
   }, [seconds]);
 
   const formatted = useMemo(() => {
@@ -49,23 +54,31 @@ export default function VerificacaoScreen() {
   }, [seconds]);
 
   async function refresh() {
+    if (busy.current || seconds === 0) return;
+    busy.current = true;
     setChecking(true);
-    const found = await checkVerificationSubmission();
-    setChecking(false);
-
-    if (found) {
-      router.replace({
-        pathname: '/codeforces/sucesso',
-        params,
-      });
+    setError('');
+    try {
+      const found = await checkVerificationSubmission();
+      if (!active.current || Date.now() >= deadline.current) return;
+      if (found) {
+        active.current = false;
+        router.replace({ pathname: '/codeforces/sucesso', params });
+      } else setError('Submissão ainda não encontrada. Tente atualizar novamente.');
+    } catch {
+      if (active.current) setError('Falha ao verificar. Tente novamente.');
+    } finally {
+      busy.current = false;
+      if (active.current) setChecking(false);
     }
   }
 
+  if (typeof params.handle !== 'string' || !params.handle.trim()) return <VerificationMissing />;
   return (
     <Screen>
       <Header
         title="Verificação em andamento"
-        onBack={() => router.back()}
+        onBack={() => goBack(origin)}
       />
 
       <Text style={styles.subtitle}>
@@ -116,13 +129,15 @@ export default function VerificacaoScreen() {
         <OutlineButton
           title={checking ? 'Verificando...' : 'Já enviei / Atualizar status'}
           onPress={refresh}
+          loading={checking}
         />
       </Card>
 
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <TextButton
         danger
         title="Cancelar verificação"
-        onPress={() => router.replace('/codeforces/verificar-conta')}
+        onPress={() => { active.current = false; router.dismissTo('/codeforces/verificar-conta'); }}
       />
     </Screen>
   );
@@ -171,7 +186,7 @@ const styles = StyleSheet.create({
   },
   remaining: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 14,
   },
   track: {
@@ -207,7 +222,7 @@ const styles = StyleSheet.create({
   },
   challengeLabel: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
   },
   challengeValue: {
     color: colors.text,

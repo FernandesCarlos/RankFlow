@@ -1,3 +1,6 @@
+import { ToggleRow as Toggle } from '../../components/ToggleRow';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Switch, Text, View } from 'react-native';
@@ -10,21 +13,18 @@ import {
 import { colors } from '../../theme/colors';
 
 export default function NotificacoesScreen() {
-  const [allowed, setAllowed] = useState(true);
-  const [weekly, setWeekly] = useState(true);
-  const [contest, setContest] = useState(true);
-  const [score, setScore] = useState(true);
-  const [result, setResult] = useState(true);
-  const [friends, setFriends] = useState(false);
-  const [invites, setInvites] = useState(true);
-  const [quiet, setQuiet] = useState(true);
-
+  const { notifications, setNotifications, setNotice } = useApp();
+  const { allowed, weekly, contest, score, result, friends, invites, quiet } = notifications;
+  const update = (key: keyof typeof notifications, value: boolean) => {
+    setNotifications(current => ({ ...current, [key]: value }));
+    setNotice({ message: 'Preferência atualizada nesta sessão. Nenhuma notificação real será enviada.', tone: 'success' });
+  };
   return (
     <Screen>
       <Header
         title="Notificações"
         subtitle="Escolha o que deseja receber"
-        onBack={() => router.back()}
+        onBack={() => goBack('/(tabs)')}
       />
 
       <Section title="Geral">
@@ -32,14 +32,15 @@ export default function NotificacoesScreen() {
           title="Permitir notificações"
           subtitle="Ativar avisos no aplicativo"
           value={allowed}
-          onChange={setAllowed}
+          onChange={value => update('allowed', value)}
         />
         <Divider />
         <Toggle
           title="Resumo semanal"
           subtitle="Seu desempenho da semana"
           value={weekly}
-          onChange={setWeekly}
+          onChange={value => update('weekly', value)}
+          disabled={!allowed}
         />
       </Section>
 
@@ -48,21 +49,24 @@ export default function NotificacoesScreen() {
           title="Lembretes de contest"
           subtitle="Avisar antes do início"
           value={contest}
-          onChange={setContest}
+          onChange={value => update('contest', value)}
+          disabled={!allowed}
         />
         <Divider />
         <Toggle
           title="Atualização de placar"
           subtitle="Mudanças durante seus desafios"
           value={score}
-          onChange={setScore}
+          onChange={value => update('score', value)}
+          disabled={!allowed}
         />
         <Divider />
         <Toggle
           title="Resultado final"
           subtitle="Avisar quando a competição acabar"
           value={result}
-          onChange={setResult}
+          onChange={value => update('result', value)}
+          disabled={!allowed}
         />
       </Section>
 
@@ -71,14 +75,16 @@ export default function NotificacoesScreen() {
           title="Atividade de amigos"
           subtitle="Novos resultados e conquistas"
           value={friends}
-          onChange={setFriends}
+          onChange={value => update('friends', value)}
+          disabled={!allowed}
         />
         <Divider />
         <Toggle
           title="Convites para treino"
           subtitle="Quando alguém convidar você"
           value={invites}
-          onChange={setInvites}
+          onChange={value => update('invites', value)}
+          disabled={!allowed}
         />
       </Section>
 
@@ -87,7 +93,8 @@ export default function NotificacoesScreen() {
           title="Não enviar notificações"
           subtitle="Entre 23:00 e 07:00"
           value={quiet}
-          onChange={setQuiet}
+          onChange={value => update('quiet', value)}
+          disabled={!allowed}
         />
       </Section>
     </Screen>
@@ -103,35 +110,8 @@ function Section({
 }) {
   return (
     <View style={{ marginBottom: 18 }}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
       <Card>{children}</Card>
-    </View>
-  );
-}
-
-function Toggle({
-  title,
-  subtitle,
-  value,
-  onChange,
-}: {
-  title: string;
-  subtitle: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <View style={styles.toggleRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.toggleTitle}>{title}</Text>
-        <Text style={styles.toggleSubtitle}>{subtitle}</Text>
-      </View>
-
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ true: colors.primary }}
-      />
     </View>
   );
 }
@@ -139,7 +119,7 @@ function Toggle({
 const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
     textTransform: 'uppercase',
     marginBottom: 7,
@@ -158,7 +138,7 @@ const styles = StyleSheet.create({
   },
   toggleSubtitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
   },
 });

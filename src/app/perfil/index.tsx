@@ -1,6 +1,10 @@
+import { MockData } from '../../components/LoadingSkeleton';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
+import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React from 'react';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Avatar,
   Card,
@@ -9,17 +13,18 @@ import {
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockProfile, mockRecentActivities } from '../../mocks';
+import { mockRecentActivities } from '../../mocks';
 
 export default function PerfilScreen() {
+  const { profile: mockProfile } = useApp();
   return (
     <Screen>
       <Header
         title="Meu perfil"
         subtitle="Dados e progresso"
-        onBack={() => router.back()}
+        onBack={() => goBack('/(tabs)')}
         right={
-          <Pressable onPress={() => router.push('/configuracoes')}>
+          <Pressable accessibilityLabel="Abrir configurações" onPress={() => router.push('/configuracoes')}>
             <Text style={styles.settings}>⚙</Text>
           </Pressable>
         }
@@ -33,20 +38,20 @@ export default function PerfilScreen() {
         <Text style={styles.bio}>{mockProfile.bio}</Text>
       </View>
 
-      <View style={styles.quickRow}>
+      <MockData label="Carregando estatísticas do perfil"><View style={styles.quickRow}>
         <Quick label="Problemas" value={String(mockProfile.problemsSolved)} />
         <Quick label="Streak" value={`${mockProfile.streakDays} dias`} />
         <Quick label="Contests" value={String(mockProfile.contests)} />
-      </View>
+      </View></MockData>
 
       <OutlineButton
         title="Editar perfil"
         onPress={() => router.push('/perfil/editar')}
       />
 
-      <Text style={styles.sectionTitle}>Plataformas vinculadas</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Plataformas vinculadas</Text>
 
-      <Pressable onPress={() => router.push('/configuracoes/plataformas')}>
+      <Pressable accessibilityLabel="Gerenciar plataformas vinculadas" onPress={() => router.push('/configuracoes/plataformas')}>
         <Card style={styles.platformCard}>
           <View style={styles.cfLogo}>
             <Text style={styles.cf}>CF</Text>
@@ -61,9 +66,9 @@ export default function PerfilScreen() {
         </Card>
       </Pressable>
 
-      <Text style={styles.sectionTitle}>Atividade recente</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Atividade recente</Text>
 
-      <Card>
+      <MockData label="Carregando atividades"><Card>
         {mockRecentActivities.map((activity, index) => (
           <Activity
             key={activity}
@@ -71,7 +76,7 @@ export default function PerfilScreen() {
             last={index === mockRecentActivities.length - 1}
           />
         ))}
-      </Card>
+      </Card></MockData>
     </Screen>
   );
 }
@@ -126,7 +131,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     textAlign: 'center',
     lineHeight: 19,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 10,
     paddingHorizontal: 16,
   },
@@ -140,7 +145,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexBasis: 90,
     minWidth: 86,
-    height: 74,
+    minHeight: 74,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 13,
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
   },
   quickLabel: {
     color: colors.muted,
-    fontSize: 11,
+    fontSize: 14,
   },
   quickValue: {
     color: colors.text,
@@ -188,7 +194,7 @@ const styles = StyleSheet.create({
   },
   platformDescription: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
   },
   chevron: {

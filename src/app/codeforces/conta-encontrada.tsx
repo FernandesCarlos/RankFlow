@@ -1,3 +1,6 @@
+import { VerificationMissing } from '../../components/VerificationMissing';
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -14,6 +17,8 @@ import { colors } from '../../theme/colors';
 import { mockCodeforces } from '../../mocks';
 
 export default function ContaEncontradaScreen() {
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{
     handle: string;
     rating: string;
@@ -22,12 +27,13 @@ export default function ContaEncontradaScreen() {
     language: string;
   }>();
 
+  if (typeof params.handle !== 'string' || !params.handle.trim()) return <VerificationMissing />;
   return (
     <Screen>
       <Header
         title="Verificação de conta"
         subtitle="Confirme que este handle pertence a você"
-        onBack={() => router.back()}
+        onBack={() => goBack(origin)}
       />
 
       <View style={styles.stepBadge}>
@@ -39,7 +45,7 @@ export default function ContaEncontradaScreen() {
           <Text style={styles.check}>✓</Text>
         </View>
 
-        <Text style={styles.title}>Conta encontrada!</Text>
+        <Text accessibilityRole="header" style={styles.title}>Conta encontrada!</Text>
         <Text style={styles.subtitle}>
           Encontramos sua conta do Codeforces. Tudo certo, vamos começar a verificação.
         </Text>
@@ -83,7 +89,7 @@ export default function ContaEncontradaScreen() {
         }
       />
 
-      <TextButton title="Cancelar" onPress={() => router.back()} />
+      <TextButton title="Cancelar" onPress={() => goBack(origin)} />
     </Screen>
   );
 }
@@ -99,7 +105,7 @@ const styles = StyleSheet.create({
   },
   stepBadgeText: {
     color: colors.primary,
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '800',
   },
   successArea: {
@@ -136,7 +142,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
   },
   handle: {
     color: colors.text,
@@ -146,7 +152,7 @@ const styles = StyleSheet.create({
   },
   member: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
   },
   stats: {

@@ -1,146 +1,115 @@
 # RankFlow
 
-Protótipo mobile do RankFlow desenvolvido com React Native, Expo e Expo Router. Nesta etapa, o foco é a camada visual e estrutural da aplicação: telas navegáveis, componentes reutilizáveis, entradas de dados e adaptação do layout a diferentes tamanhos de tela.
+Aplicação de demonstração para programação competitiva, desenvolvida com **React Native, Expo, Expo Router e TypeScript**. A Etapa 3 completa os fluxos de navegação e aplica princípios de UX, Lei de Fitts e acessibilidade.
 
-O RankFlow é uma aplicação voltada para programação competitiva. O protótipo permite visualizar desempenho, amigos, treinos, placar, estatísticas, perfil e o fluxo de vinculação de uma conta do Codeforces.
+## Entrega da Etapa 3
 
-## Tecnologias
+- [Documentação completa: navegação, UX, acessibilidade e testes](docs/etapa-03.md)
+- [Código da Etapa 3](https://github.com/FernandesCarlos/RankFlow/tree/feature/etapa-03)
+- Tag exigida: `etapa-03`. Criada localmente; publicação remota pendente. Veja os comandos na documentação.
+- [Documentação anterior — Etapa 2](docs/etapa-02.md)
+- [Proposta do projeto](docs/proposta.md)
 
-- React Native
-- Expo
-- Expo Router
-- TypeScript
-- `react-native-svg`
-- `lucide-react-native`
+## Funcionalidades
 
-Os ícones usam `lucide-react-native`, evitando a dependência da fonte `Ionicons.ttf` durante a execução via tunnel.
+- Boas-vindas, login, cadastro e recuperação de senha com validação e mensagens claras.
+- Abas Início, Amigos, Treino, Placar e Configurações, com estado selecionado e histórico de retorno.
+- Pilha de detalhes: estatísticas, perfil, edição, preferências, perfil de amigo e resultado do treino.
+- Busca de amigos com estado vazio e abertura de perfil por rota dinâmica.
+- Geração de lista demonstrativa com participantes, dificuldade, quantidade e tags escolhidos.
+- Histórico de treinos concluídos na sessão, com resultados simulados por participante e reabertura por ID.
+- Skeletons acessíveis durante o carregamento dos mocks e da consulta Codeforces.
+- Edição de perfil e preferências compartilhadas durante a sessão.
+- Fluxo Codeforces: consulta simulada, conta encontrada, verificação, sucesso/falha e retorno à origem preservando o cadastro.
+- Controles com rótulos, papéis e estados acessíveis, foco visível, feedback de toque e mensagens de resultado.
 
-## Estrutura principal
+**Escopo:** não há autenticação real, backend ou persistência após reiniciar. Login aceita usuário e senha fictícios não vazios. Cadastro, recuperação de senha, Codeforces, geração de problemas e placar são simulações; não enviam e-mails, submissões, convites ou notificações. Sair encerra e limpa a sessão. `Stack.Protected` organiza o acesso ao protótipo, não substitui autorização em um servidor.
 
-```text
-src/
-├── app/                 # telas e rotas do Expo Router
-│   ├── (auth)/          # boas-vindas, login, cadastro e recuperação de senha
-│   ├── (tabs)/          # início, amigos, treino, placar e estatísticas
-│   ├── codeforces/      # fluxo de verificação de conta
-│   ├── configuracoes/   # configurações, plataformas e notificações
-│   └── perfil/          # perfil e edição de perfil
-├── components/
-│   └── ui.tsx           # componentes reutilizáveis de interface
-├── mocks/               # dados simulados da Etapa 2
-├── services/            # lógica simulada de serviços
-└── theme/               # cores e tema visual
-```
+## Executar
 
-## Telas implementadas
-
-O protótipo possui 19 telas navegáveis:
-
-1. Boas-vindas
-2. Login
-3. Cadastro
-4. Recuperar senha
-5. Início
-6. Amigos
-7. Criar treino
-8. Placar ao vivo
-9. Estatísticas
-10. Perfil
-11. Editar perfil
-12. Configurações
-13. Plataformas conectadas
-14. Notificações
-15. Verificar conta do Codeforces
-16. Conta encontrada
-17. Verificação em andamento
-18. Conta verificada
-19. Falha na verificação
-
-## Componentes reutilizáveis
-
-Os principais componentes compartilhados ficam em `src/components/ui.tsx`:
-
-- `Screen`
-- `Header`
-- `Title`
-- `Field`
-- `PrimaryButton`
-- `OutlineButton`
-- `TextButton`
-- `Card`
-- `InfoBox`
-- `SectionTitle`
-- `Stat`
-- `Avatar`
-- `Divider`
-- `SettingRow`
-- `ProgressBar`
-
-Isso evita repetir estrutura e estilos em cada tela e mantém a interface consistente.
-
-## Dados simulados
-
-A Etapa 2 não depende de backend nem persistência. Os dados usados na interface ficam centralizados em:
-
-```text
-src/mocks/
-├── codeforces.ts
-├── friends.ts
-├── platforms.ts
-├── profile.ts
-├── ranking.ts
-├── statistics.ts
-├── training.ts
-└── index.ts
-```
-
-`src/services/codeforces.ts` simula as operações necessárias para demonstrar o fluxo de verificação do Codeforces.
-
-## Adaptação do layout
-
-A base das telas foi preparada para diferentes tamanhos de dispositivo por meio de:
-
-- `useWindowDimensions()` para ajustar espaçamento horizontal conforme a largura disponível;
-- largura máxima de conteúdo em telas maiores;
-- `ScrollView` para impedir perda de conteúdo em telas menores;
-- `Safe Area` para respeitar barras, recortes e notch do aparelho;
-- `KeyboardAvoidingView` para reduzir sobreposição do teclado;
-- Flexbox (`flex`, `flexGrow`, `flexBasis` e `flexWrap`) em grupos de cards, botões e chips;
-- componentes sem largura fixa para a estrutura principal da tela.
-
-## Como executar
-
-Com Node.js e o Expo Go instalados, entre na pasta do projeto e execute:
+Use Node.js **22.13 ou superior** (validação realizada com Node 24), npm e Expo Go compatível com o SDK 57 do projeto, ou um development build compatível.
 
 ```bash
-npm install
-npx expo install react-native-svg
-npm install lucide-react-native
+npm ci
+npm start
 ```
 
-Para iniciar usando tunnel:
+Abra o QR Code no Expo Go. Para navegador:
 
 ```bash
-npx expo start --tunnel
+npm run web
 ```
 
-Abra o Expo Go no celular e leia o QR Code exibido pelo terminal.
+Para emulador Android ou simulador iOS, com o ambiente nativo configurado:
 
-## Teste do fluxo Codeforces
-
-O fluxo ainda é simulado para fins de protótipo:
-
-- `naoexiste` simula um handle não encontrado;
-- qualquer outro handle simula uma conta encontrada;
-- `Já enviei / Atualizar status` simula uma submissão detectada;
-- se o cronômetro terminar, o fluxo segue para a tela de falha.
-
-## Documentação da Etapa 2
-
-A documentação específica da entrega está em:
-
-```text
-docs/etapa-02.md
+```bash
+npm run android
+npm run ios
 ```
 
-Ela descreve telas, componentes, entradas de dados, responsividade, decisões de interface, execução e os passos para criar a tag Git `etapa-02`.
+Se precisar de túnel, use `npx expo start --tunnel`. Não é necessário reinstalar os ícones ou alterar as versões do lockfile.
+
+### Docker com túnel
+
+Com o Docker instalado e iniciado, execute na raiz do projeto:
+
+```bash
+docker build -t rankflow .
+docker run --rm -it --init -p 8081:8081 --name rankflow rankflow
+```
+
+A imagem instala Node.js 22 e todas as dependências do lockfile, incluindo `@expo/ngrok`, e inicia `npx expo start --tunnel`. Não é necessário instalar Node ou npm no computador. Aguarde o túnel conectar e leia o QR Code no terminal com um Expo Go compatível com o SDK do projeto. O túnel requer conexão com a internet e permite acessar o servidor de desenvolvimento pelo celular em outra rede. Ele não gera um APK.
+
+Use `Ctrl+C` para parar. O código é copiado para a imagem durante o build; depois de editar arquivos, refaça o build e execute o contêiner novamente. Arquivos `.env` não entram na imagem; se precisar de variáveis, passe `--env-file .env` ao `docker run`.
+
+## Testar
+
+```bash
+npm run typecheck
+npm test
+npm run export:web
+```
+
+`npm test` executa validações/geração e testes das telas reais com o Expo Router. Os cenários incluem login, logout, estado preservado no retorno, perfil, treino, amigos, estatísticas, recuperação e Codeforces. Os testes ficam fora de `src/app`, para não virarem rotas.
+
+O [roteiro manual](docs/etapa-03.md#roteiro-manual-em-aparelho) cobre TalkBack/VoiceOver, fonte ampliada, safe area, teclado e botão físico Voltar. Esses aspectos exigem conferência em dispositivo; testes de componentes não comprovam a experiência visual ou auditiva final.
+
+## Pilha e router na prática
+
+O `Stack` raiz, em [`src/app/_layout.tsx`](src/app/_layout.tsx), contém as abas e as telas de detalhe. Cada arquivo em `src/app` define uma rota. Não é necessário criar um segundo `NavigationContainer`.
+
+```tsx
+// Empilha a edição sobre o perfil.
+router.push('/perfil/editar');
+
+// Remove a tela atual e revela a anterior.
+router.back();
+
+// Troca uma etapa transitória pela conclusão.
+router.replace({ pathname: '/codeforces/sucesso', params });
+
+// Retorna à tela já existente, removendo as etapas intermediárias.
+router.dismissTo('/(auth)/cadastro');
+```
+
+A aplicação usa `goBack(destino)` para verificar `router.canGoBack()` e oferecer retorno mesmo quando uma tela é aberta diretamente. Ao iniciar ou encerrar uma sessão, `Stack.Protected` remove do histórico as rotas que deixam de estar disponíveis.
+
+## Estrutura
+
+| Local | Responsabilidade |
+| --- | --- |
+| `src/app/(auth)` | Boas-vindas, login, cadastro, recuperação |
+| `src/app/(tabs)` | Início, Amigos, Treino e Placar |
+| `src/app/estatisticas.tsx` | Detalhe em pilha acessado pelo Início |
+| `src/app/amigos/[handle].tsx` | Perfil do amigo identificado pela rota |
+| `src/app/treinos/resultado.tsx` | Lista gerada e retorno à configuração do treino |
+| `src/app/perfil`, `src/app/configuracoes` | Perfil e preferências |
+| `src/app/codeforces` | Pilha de verificação simulada |
+| `src/components` | Componentes visuais, controles acessíveis e estados vazios |
+| `src/state/AppContext.tsx` | Estado em memória da sessão |
+| `src/navigation/actions.ts` | Retorno com destino alternativo |
+| `src/services` | Validação, geração e serviços simulados |
+| `src/mocks`, `src/theme` | Dados iniciais e paleta |
+| `tests` | Testes de domínio e navegação |
+
+Os ícones usam `lucide-react-native` e `react-native-svg`.

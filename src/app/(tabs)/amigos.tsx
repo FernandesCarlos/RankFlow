@@ -1,17 +1,22 @@
+import { MockData } from '../../components/LoadingSkeleton';
+import { useApp } from '../../state/AppContext';
+import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Avatar,
   Card,
   Field,
+  InfoBox,
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockFriends, mockProfile } from '../../mocks';
+import { mockFriends } from '../../mocks';
 import { router } from 'expo-router';
 
 
 export default function AmigosScreen() {
+  const { profile: mockProfile } = useApp();
   const [query, setQuery] = useState('');
 
   const visible = mockFriends.filter((friend) =>
@@ -22,28 +27,31 @@ export default function AmigosScreen() {
     <Screen>
       <View style={styles.top}>
         <View style={styles.headingBlock}>
-          <Text style={styles.title}>Amigos</Text>
+          <Text accessibilityRole="header" style={styles.title}>Amigos</Text>
           <Text style={styles.subtitle}>
             Acompanhe quem está treinando
           </Text>
         </View>
-        <Pressable onPress={() => router.push('/perfil')}>
+        <Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
                  <Avatar initials={mockProfile.initials} size={40} />
                </Pressable>
       </View>
 
       <Field
-        label=""
+        label="Buscar amigo pelo handle"
         value={query}
         onChangeText={setQuery}
         placeholder="⌕  Buscar handle..."
         autoCapitalize="none"
       />
 
-      <Text style={styles.sectionTitle}>Seus amigos</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Seus amigos</Text>
 
+      <MockData label="Carregando amigos">
+        {!visible.length ? <InfoBox>Nenhum amigo encontrado. Tente outro handle ou limpe a busca.</InfoBox> : null}
       {visible.map((friend) => (
-        <Card key={friend.handle} style={styles.friendCard}>
+        <Pressable key={friend.handle} accessibilityLabel={`Ver perfil de ${friend.handle}, rating ${friend.rating}`} onPress={() => router.push({ pathname: '/amigos/[handle]', params: { handle: friend.handle } })}>
+        <Card style={styles.friendCard}>
           <Avatar initials={friend.initials} size={46} />
 
           <View style={{ flex: 1 }}>
@@ -54,8 +62,9 @@ export default function AmigosScreen() {
 
           <Text style={styles.chevron}>›</Text>
         </Card>
+        </Pressable>
       ))}
-    </Screen>
+    </MockData></Screen>
   );
 }
 
@@ -100,13 +109,13 @@ const styles = StyleSheet.create({
   },
   rank: {
     color: colors.primary,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 3,
     fontWeight: '600',
   },
   activity: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 6,
   },
   chevron: {

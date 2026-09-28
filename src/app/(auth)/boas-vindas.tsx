@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   terms: {
     color: colors.subtle,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: 14,
     marginTop: 18,
   },
 });

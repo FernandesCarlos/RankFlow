@@ -1,3 +1,5 @@
+import { useApp } from '../../state/AppContext';
+import { goBack } from '../../navigation/actions';
 import React from 'react';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -12,12 +14,13 @@ import { colors } from '../../theme/colors';
 import { mockPlatforms } from '../../mocks';
 
 export default function PlataformasScreen() {
+  const { setVerificationOrigin, verifiedHandle } = useApp();
   return (
     <Screen>
       <Header
         title="Plataformas"
         subtitle="Gerencie suas contas"
-        onBack={() => router.back()}
+        onBack={() => goBack('/(tabs)')}
       />
 
       <Card
@@ -36,9 +39,10 @@ export default function PlataformasScreen() {
         <Platform
           key={platform.name}
           {...platform}
+          description={platform.name === 'Codeforces' && verifiedHandle ? `Conta ${verifiedHandle} verificada nesta sessão` : platform.description}
           onPress={
             platform.name === 'Codeforces'
-              ? () => router.push('/codeforces/verificar-conta')
+              ? () => { setVerificationOrigin('plataformas'); router.push('/codeforces/verificar-conta'); }
               : undefined
           }
         />
@@ -77,15 +81,7 @@ function Platform({
         <Text style={styles.description}>{description}</Text>
       </View>
 
-      <Text
-        onPress={onPress}
-        style={[
-          styles.status,
-          connected && { color: colors.success },
-        ]}
-      >
-        {status}
-      </Text>
+      {onPress ? <OutlineButton title="Verificar Codeforces" onPress={onPress} /> : <Text style={styles.status}>{status} (indisponível)</Text>}
     </Card>
   );
 }
@@ -102,8 +98,6 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
   platform: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
   },
   platformIcon: {
@@ -125,12 +119,12 @@ const styles = StyleSheet.create({
   },
   description: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 4,
   },
   status: {
     color: colors.primary,
     fontWeight: '800',
-    fontSize: 12,
+    fontSize: 14,
   },
 });
