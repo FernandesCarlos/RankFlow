@@ -13,10 +13,12 @@ Aplicação de demonstração para programação competitiva, desenvolvida com *
 ## Funcionalidades
 
 - Boas-vindas, login, cadastro e recuperação de senha com validação e mensagens claras.
-- Abas Início, Amigos, Treino e Placar, com estado selecionado e histórico de retorno.
-- Pilha de detalhes: estatísticas, perfil, edição, configurações, perfil de amigo e resultado do treino.
+- Abas Início, Amigos, Treino, Placar e Configurações, com estado selecionado e histórico de retorno.
+- Pilha de detalhes: estatísticas, perfil, edição, preferências, perfil de amigo e resultado do treino.
 - Busca de amigos com estado vazio e abertura de perfil por rota dinâmica.
 - Geração de lista demonstrativa com participantes, dificuldade, quantidade e tags escolhidos.
+- Histórico de treinos concluídos na sessão, com resultados simulados por participante e reabertura por ID.
+- Skeletons acessíveis durante o carregamento dos mocks e da consulta Codeforces.
 - Edição de perfil e preferências compartilhadas durante a sessão.
 - Fluxo Codeforces: consulta simulada, conta encontrada, verificação, sucesso/falha e retorno à origem preservando o cadastro.
 - Controles com rótulos, papéis e estados acessíveis, foco visível, feedback de toque e mensagens de resultado.
@@ -46,6 +48,19 @@ npm run ios
 ```
 
 Se precisar de túnel, use `npx expo start --tunnel`. Não é necessário reinstalar os ícones ou alterar as versões do lockfile.
+
+### Docker com túnel
+
+Com o Docker instalado e iniciado, execute na raiz do projeto:
+
+```bash
+docker build -t rankflow .
+docker run --rm -it --init -p 8081:8081 --name rankflow rankflow
+```
+
+A imagem instala Node.js 22 e todas as dependências do lockfile, incluindo `@expo/ngrok`, e inicia `npx expo start --tunnel`. Não é necessário instalar Node ou npm no computador. Aguarde o túnel conectar e leia o QR Code no terminal com um Expo Go compatível com o SDK do projeto. O túnel requer conexão com a internet e permite acessar o servidor de desenvolvimento pelo celular em outra rede. Ele não gera um APK.
+
+Use `Ctrl+C` para parar. O código é copiado para a imagem durante o build; depois de editar arquivos, refaça o build e execute o contêiner novamente. Arquivos `.env` não entram na imagem; se precisar de variáveis, passe `--env-file .env` ao `docker run`.
 
 ## Testar
 

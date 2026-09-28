@@ -15,7 +15,6 @@ function Navigation() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="perfil/index" />
         <Stack.Screen name="perfil/editar" />
-        <Stack.Screen name="configuracoes/index" />
         <Stack.Screen name="configuracoes/notificacoes" />
         <Stack.Screen name="configuracoes/plataformas" />
         <Stack.Screen name="configuracoes/informacoes" />

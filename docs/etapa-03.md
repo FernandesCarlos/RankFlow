@@ -9,7 +9,7 @@ Evoluir as telas da Etapa 2 com navegação completa, retorno coerente, feedback
 
 ## Estrutura de navegação
 
-O projeto utiliza **Expo Router**, com rotas definidas pelos arquivos de `src/app`, e o componente **Stack** para a navegação em pilha. `Tabs` organiza as quatro áreas principais. A pilha raiz permite abrir detalhes por cima das abas e voltar ao conteúdo que já estava montado.
+O projeto utiliza **Expo Router**, com rotas definidas pelos arquivos de `src/app`, e o componente **Stack** para a navegação em pilha. `Tabs` organiza as cinco áreas principais. A pilha raiz permite abrir detalhes por cima das abas e voltar ao conteúdo que já estava montado.
 
 ```mermaid
 flowchart TD
@@ -55,8 +55,8 @@ Exemplo prático: Início → Perfil → Editar perfil. Ao salvar, o estado comp
 | Início `/` no grupo `(tabs)` | Login/cadastro ou aba Início | Avatar → Perfil; Performance → Estatísticas |
 | Amigos `/amigos` | Aba Amigos | Busca e seleção de amigo |
 | Perfil de amigo `/amigos/[handle]` | Card na lista de amigos | Voltar preserva a busca |
-| Treino `/treino` | Aba Treino | Gerar problemas → Resultado |
-| Resultado `/treinos/resultado` | Geração válida de treino | Ajustar opções ou abrir o placar |
+| Treino `/treino` | Aba Treino | Gerar problemas; histórico → resultado por ID |
+| Resultado `/treinos/resultado?id=…` | Geração válida ou histórico | Concluir simulação, consultar resultado por participante e voltar |
 | Placar `/placar` | Aba Placar ou Resultado | Troca de abas |
 | Estatísticas `/estatisticas` | Performance recente no Início | Voltar ao Início; seletor Tags/Rating |
 | Perfil `/perfil` | Avatar das áreas principais | Voltar; Editar; Configurações; Plataformas |
@@ -143,7 +143,7 @@ A configuração Jest usa o preset oficial `jest-expo` e resolve os ícones Luci
 ### Roteiro manual em aparelho
 
 1. Abra o projeto no Expo Go compatível. Entre com qualquer usuário e senha fictícios não vazios. Confirme que login vazio mostra explicação.
-2. Troque entre as quatro abas. Abra Estatísticas pelo Início, alterne Tags/Rating e volte.
+2. Troque entre as cinco abas. Abra Estatísticas pelo Início, alterne Tags/Rating e volte.
 3. Busque `ana` em Amigos, abra o perfil e volte. A busca deve continuar preenchida. Busque um handle inexistente e confira o estado vazio.
 4. Em Treino, altere participantes, dificuldade, quantidade e tags. Gere a lista, confira as escolhas, volte e confira que as opções permaneceram. Teste máximo menor que mínimo e nenhuma tag selecionada.
 5. Abra Perfil → Editar perfil, altere o nome e salve. Confirme os novos dados e a mensagem. Voltar sem salvar não deve aplicar a edição.
@@ -187,3 +187,12 @@ Não use `--force` nem sobrescreva uma tag existente. Após a publicação, a ve
 - [Expo Router — rotas protegidas](https://docs.expo.dev/router/advanced/protected/)
 - [Expo Router — testes](https://docs.expo.dev/router/reference/testing/)
 - [React Native — acessibilidade](https://reactnative.dev/docs/accessibility)
+
+
+## Complementos da Etapa 3
+
+- A ordem das abas é Início, Amigos, Treino, Placar e Configurações (rótulo compacto “Config.”). Os detalhes de preferências continuam na pilha, por cima das abas.
+- O perfil do amigo separa avatar, handle e título do cartão “Desempenho competitivo”, que apresenta o rating com fundo e borda próprios.
+- Na aba Treino, o histórico começa vazio. Gere uma lista e toque em “Concluir treino demonstrativo” para registrar um resultado. Cada conclusão guarda ID, data, parâmetros, problemas e resultados por participante; gerar outra lista não sobrescreve as anteriores. Toque em um item para abrir `/treinos/resultado?id=…`. Os pontos e resoluções são simulados e identificados na tela. O histórico é limpo ao sair ou reiniciar o aplicativo.
+- `MockData` apresenta skeletons por 450 ms para simular a leitura dos mocks em Início, Amigos, perfil do amigo, Placar, Estatísticas, estatísticas e atividades do perfil, participantes do treino e histórico. A consulta Codeforces utiliza seu estado assíncrono real de carregamento para exibir `LoadingSkeleton`. Os placeholders não animam, têm anúncio acessível e ocultam seus blocos decorativos do leitor de tela; timers são cancelados ao desmontar. Não há requisição a API real nesses fluxos.
+- Validação manual adicional: concluir dois treinos de quantidades diferentes, abrir ambos pelo histórico e conferir resultados independentes; abrir preferências pela quinta aba e voltar; verificar placeholders antes do conteúdo e contraste dos cartões do amigo.

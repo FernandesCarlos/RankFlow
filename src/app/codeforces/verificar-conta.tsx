@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { useApp } from '../../state/AppContext';
 import { goBack } from '../../navigation/actions';
 import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
@@ -110,6 +111,7 @@ export default function VerificarContaScreen() {
         />
       </Card>
 
+      {loading ? <LoadingSkeleton label="Buscando conta Codeforces" /> : null}
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
 
       <PrimaryButton

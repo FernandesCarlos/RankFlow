@@ -1,3 +1,4 @@
+import { MockData } from '../../components/LoadingSkeleton';
 import { useApp } from '../../state/AppContext';
 import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React from 'react';
@@ -34,7 +35,7 @@ export default function PlacarScreen() {
         <Text style={styles.liveText}>● DEMONSTRAÇÃO</Text>
       </View>
 
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
+<MockData label="Carregando placar">      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <View style={styles.tableHeader}>
           <Text style={[styles.headerText, { width: 34 }]}>#</Text>
           <Text style={[styles.headerText, { flex: 1 }]}>Competidor</Text>
@@ -84,7 +85,7 @@ export default function PlacarScreen() {
           ))}
         </View>
       </Card>
-    </Screen>
+    </MockData></Screen>
   );
 }
 

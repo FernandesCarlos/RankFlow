@@ -1,3 +1,4 @@
+import { MockData } from '../components/LoadingSkeleton';
 import { useApp } from '../state/AppContext';
 import { goBack } from '../navigation/actions';
 import { AccessiblePressable as Pressable } from '../components/AccessiblePressable';
@@ -64,7 +65,7 @@ export default function EstatisticasScreen() {
         </Pressable>
       </View>
 
-      {tab === 'tags' ? (
+<MockData label="Carregando estatísticas">      {tab === 'tags' ? (
         <>
           <Text accessibilityRole="header" style={styles.sectionTitle}>Maestria por tags</Text>
 
@@ -122,7 +123,7 @@ export default function EstatisticasScreen() {
           </Card>
         </>
       )}
-    </Screen>
+    </MockData></Screen>
   );
 }
 

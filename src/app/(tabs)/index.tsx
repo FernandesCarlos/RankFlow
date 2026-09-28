@@ -1,3 +1,4 @@
+import { MockData } from '../../components/LoadingSkeleton';
 import { useApp } from '../../state/AppContext';
 import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
 import React from 'react';
@@ -29,7 +30,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <Card>
+<MockData label="Carregando desempenho">      <Card>
         <View style={styles.profileRow}>
           <Avatar initials={mockProfile.initials} size={52} />
 
@@ -84,7 +85,7 @@ export default function HomeScreen() {
           <ProgressBar value={mockHomePerformance.progress} />
         </Card>
       </Pressable>
-    </Screen>
+    </MockData></Screen>
   );
 }
 

@@ -1,14 +1,13 @@
 import React from 'react';
 import { router } from 'expo-router';
 import { Card, Divider, Header, Screen, SettingRow, InfoBox } from '../../components/ui';
-import { goBack } from '../../navigation/actions';
 import { useApp } from '../../state/AppContext';
 
 export default function ConfiguracoesScreen() {
   const { signOut } = useApp();
   const information = (secao: string) => router.push({ pathname: '/configuracoes/informacoes', params: { secao } });
   return <Screen>
-    <Header title="Configurações" subtitle="Personalize o RankFlow" onBack={() => goBack('/perfil')} />
+    <Header title="Configurações" subtitle="Personalize o RankFlow" />
     <Card>
       <SettingRow title="Editar perfil" subtitle="Dados pessoais e bio" onPress={() => router.push('/perfil/editar')} />
       <Divider />

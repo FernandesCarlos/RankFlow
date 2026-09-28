@@ -98,16 +98,16 @@ test('Codeforces started from platforms returns there instead of registration', 
 
 test('friends search and statistics preserve stack return destinations', async () => {
   await login();
-  fireEvent.press(screen.getByRole('button', { name: 'Ver estatísticas de desempenho' }));
+  fireEvent.press(await screen.findByRole('button', { name: 'Ver estatísticas de desempenho' }));
   fireEvent.press(screen.getByRole('tab', { name: 'Rating' }));
-  expect(screen.getByText('Evolução de rating')).toBeTruthy();
+  expect(await screen.findByText('Evolução de rating')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Voltar para a tela anterior' }));
   expect(screen.getByText(/Olá,/)).toBeTruthy();
   act(() => router.navigate('/(tabs)/amigos'));
   fireEvent.changeText(screen.getByLabelText('Buscar amigo pelo handle'), 'nao_existe');
-  expect(screen.getByText('Nenhum amigo encontrado. Tente outro handle ou limpe a busca.')).toBeTruthy();
+  expect(await screen.findByText('Nenhum amigo encontrado. Tente outro handle ou limpe a busca.')).toBeTruthy();
   fireEvent.changeText(screen.getByLabelText('Buscar amigo pelo handle'), 'ana');
-  fireEvent.press(screen.getByRole('button', { name: /Ver perfil de ana_cp/ }));
+  fireEvent.press(await screen.findByRole('button', { name: /Ver perfil de ana_cp/ }));
   expect(screen.getByText('Perfil do amigo')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Voltar para a tela anterior' }));
   expect(screen.getByLabelText('Buscar amigo pelo handle')).toHaveDisplayValue('ana');
@@ -157,4 +157,47 @@ test('cancelling lookup prevents its delayed response from changing the route', 
   await act(async () => { jest.advanceTimersByTime(1000); });
   expect(screen.getByLabelText('Nome completo')).toBeTruthy();
   expect(screen.queryByText('Conta encontrada!')).toBeNull();
+});
+
+test('settings tab opens preferences and returns from a detail', async () => {
+  await login();
+  fireEvent.press(screen.getByLabelText('Configurações, aba'));
+  expect(await screen.findByText('Personalize o RankFlow')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: /Notificações/ }));
+  act(() => router.back());
+  expect(await screen.findByText('Personalize o RankFlow')).toBeTruthy();
+});
+
+test('completed training history preserves its own results after a new training', async () => {
+  await login();
+  act(() => router.navigate('/(tabs)/treino'));
+  fireEvent.press(await screen.findByRole('radio', { name: '3 problemas' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Gerar problemas' }));
+  fireEvent.press(await screen.findByRole('button', { name: 'Concluir treino demonstrativo' }));
+  expect(await screen.findByText('Resultado do treino')).toBeTruthy();
+  act(() => router.back());
+  fireEvent.press(await screen.findByRole('radio', { name: '6 problemas' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Gerar problemas' }));
+  await screen.findByText('6 problemas demonstrativos gerados com sucesso.');
+  fireEvent.press(screen.getByRole('button', { name: 'Concluir treino demonstrativo' }));
+  expect(screen.getByText('6/6 resolvidos • 600 pontos')).toBeTruthy();
+  act(() => router.back());
+  fireEvent.press(await screen.findByRole('button', { name: /Ver resultado do treino.*3 problemas/ }));
+  expect(await screen.findByText('Resultado do treino')).toBeTruthy();
+  expect(screen.getByText('Exercício demonstrativo 3')).toBeTruthy();
+  expect(screen.queryByText('Exercício demonstrativo 4')).toBeNull();
+  expect(screen.getByText('3/3 resolvidos • 300 pontos')).toBeTruthy();
+  act(() => router.back());
+  fireEvent.press(await screen.findByRole('button', { name: /Ver resultado do treino.*6 problemas/ }));
+  expect(screen.getByText('6/6 resolvidos • 600 pontos')).toBeTruthy();
+});
+
+
+test('unknown training history ID does not show the current training', async () => {
+  await login();
+  act(() => router.navigate('/(tabs)/treino'));
+  fireEvent.press(screen.getByRole('button', { name: 'Gerar problemas' }));
+  act(() => router.push('/treinos/resultado?id=inexistente'));
+  expect(await screen.findByText('Não há treino nesta sessão. Escolha as opções para gerar uma lista.')).toBeTruthy();
+  expect(screen.queryByText('Exercício demonstrativo 1')).toBeNull();
 });

@@ -1,3 +1,4 @@
+import { MockData } from '../../components/LoadingSkeleton';
 import { useApp } from '../../state/AppContext';
 import { goBack } from '../../navigation/actions';
 import { AccessiblePressable as Pressable } from '../../components/AccessiblePressable';
@@ -37,11 +38,11 @@ export default function PerfilScreen() {
         <Text style={styles.bio}>{mockProfile.bio}</Text>
       </View>
 
-      <View style={styles.quickRow}>
+      <MockData label="Carregando estatísticas do perfil"><View style={styles.quickRow}>
         <Quick label="Problemas" value={String(mockProfile.problemsSolved)} />
         <Quick label="Streak" value={`${mockProfile.streakDays} dias`} />
         <Quick label="Contests" value={String(mockProfile.contests)} />
-      </View>
+      </View></MockData>
 
       <OutlineButton
         title="Editar perfil"
@@ -67,7 +68,7 @@ export default function PerfilScreen() {
 
       <Text accessibilityRole="header" style={styles.sectionTitle}>Atividade recente</Text>
 
-      <Card>
+      <MockData label="Carregando atividades"><Card>
         {mockRecentActivities.map((activity, index) => (
           <Activity
             key={activity}
@@ -75,7 +76,7 @@ export default function PerfilScreen() {
             last={index === mockRecentActivities.length - 1}
           />
         ))}
-      </Card>
+      </Card></MockData>
     </Screen>
   );
 }

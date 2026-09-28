@@ -3,6 +3,7 @@ import { useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import {
   CirclePlus,
+  Settings,
   Home,
   Trophy,
   Users,
@@ -76,6 +77,11 @@ export default function TabsLayout() {
         }}
       />
 
+      <Tabs.Screen name="configuracoes" options={{
+        title: 'Configurações', tabBarLabel: 'Config.',
+        tabBarAccessibilityLabel: 'Configurações, aba',
+        tabBarIcon: ({ color, size }) => <Settings color={color} size={size} strokeWidth={2} />,
+      }} />
     </Tabs>
   );
 }
