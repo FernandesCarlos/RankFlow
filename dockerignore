@@ -1,0 +1,13 @@
+node_modules
+.git
+.worktrees
+.expo
+dist
+web-build
+.test-build
+coverage
+*.tsbuildinfo
+npm-debug.log*
+.env
+.env.*
+!.env.example
