@@ -8,7 +8,7 @@ import { useApp } from '../../state/AppContext';
 import { colors } from '../../theme/colors';
 const sections = {
   ajuda: { title: 'Ajuda e suporte', text: 'Use as abas inferiores para acessar Início, Amigos, Treino e Placar. Toque no avatar para abrir seu perfil. O botão Voltar retorna à tela anterior. Para ver estatísticas, abra Performance recente no Início. Em Treino, escolha opções e gere uma lista demonstrativa.' },
-  sobre: { title: 'Sobre o RankFlow', text: 'RankFlow é um protótipo para programação competitiva, desenvolvido com React Native, Expo e Expo Router. Etapa 3: navegação em pilha, experiência do usuário e acessibilidade. Login, Codeforces, treinos e placar usam dados simulados.' },
+  sobre: { title: 'Sobre o RankFlow', text: 'RankFlow é um protótipo para programação competitiva, desenvolvido com React Native, Expo e Expo Router.' },
   idioma: { title: 'Idioma e aparência', text: 'Esta versão está disponível em Português (Brasil) e tema claro. O tamanho dos textos acompanha a configuração do sistema. As cores foram ajustadas para melhorar a leitura. Outros idiomas e tema escuro ainda não estão disponíveis.' },
   privacidade: { title: 'Privacidade', text: 'A preferência abaixo é demonstrativa e fica apenas nesta sessão. Não há publicação de perfil nem comunicação com um servidor.' },
 };

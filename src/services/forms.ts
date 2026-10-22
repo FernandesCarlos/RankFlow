@@ -27,7 +27,7 @@ export function createTraining(input: TrainingInput) {
     tags: [...input.tags],
     problems: Array.from({ length: input.quantity }, (_, index) => ({
       id: String(index + 1),
-      title: `Exercício demonstrativo ${index + 1}`,
+      title: `Problema: ${index + 1}`,
       tag: input.tags[index % input.tags.length],
       rating: Math.round(input.min + ((input.max - input.min) * index) / Math.max(1, input.quantity - 1)),
     })),

@@ -21,6 +21,7 @@ function Navigation() {
         <Stack.Screen name="estatisticas" />
         <Stack.Screen name="amigos/[handle]" />
         <Stack.Screen name="treinos/resultado" />
+        <Stack.Screen name="treinos/historico" />
       </Stack.Protected>
       <Stack.Screen name="codeforces" />
       <Stack.Screen name="+not-found" />

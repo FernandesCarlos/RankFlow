@@ -1,6 +1,6 @@
 import React from 'react';
 import { router } from 'expo-router';
-import { Card, Divider, Header, Screen, SettingRow, InfoBox } from '../../components/ui';
+import { Card, Divider, Header, Screen, SettingRow } from '../../components/ui';
 import { useApp } from '../../state/AppContext';
 
 export default function ConfiguracoesScreen() {
@@ -10,6 +10,8 @@ export default function ConfiguracoesScreen() {
     <Header title="Configurações" subtitle="Personalize o RankFlow" />
     <Card>
       <SettingRow title="Editar perfil" subtitle="Dados pessoais e bio" onPress={() => router.push('/perfil/editar')} />
+      <Divider />
+      <SettingRow title="Histórico de Treinos" subtitle="Ver histórico de Treinos realizados" onPress={() => router.push('/treinos/historico')} />
       <Divider />
       <SettingRow title="Plataformas" subtitle="Gerenciar conta Codeforces" onPress={() => router.push('/configuracoes/plataformas')} />
       <Divider />
@@ -25,8 +27,7 @@ export default function ConfiguracoesScreen() {
       <Divider />
       <SettingRow title="Sobre o RankFlow" subtitle="Etapa 3 — navegação, UX e acessibilidade" onPress={() => information('sobre')} />
       <Divider />
-      <SettingRow title="Sair da conta" subtitle="Encerrar e limpar a sessão de demonstração" onPress={signOut} />
+      <SettingRow title="Sair da conta" subtitle="Encerrar a sessão" onPress={signOut} />
     </Card>
-    <InfoBox>Perfil, preferências e treinos ficam na memória durante esta sessão. Não há envio de dados para um servidor.</InfoBox>
   </Screen>;
 }

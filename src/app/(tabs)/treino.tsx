@@ -30,18 +30,7 @@ export default function TreinoScreen() {
       <View style={{ flex: 1 }}><Text accessibilityRole="header" style={styles.title}>Criar treino</Text><Text style={styles.subtitle}>Escolha os problemas e participantes</Text></View>
       <AccessiblePressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}><Avatar initials={profile.initials} /></AccessiblePressable>
     </View>
-    <SectionTitle>Histórico de treinos</SectionTitle>
-    <InfoBox>Resultados demonstrativos, guardados apenas nesta sessão.</InfoBox>
-    <MockData label="Carregando histórico">{!trainingHistory.length ? <Card><Text style={{ color: colors.muted }}>Nenhum treino concluído. Gere uma lista e conclua o treino demonstrativo para ver o resultado aqui.</Text></Card> : trainingHistory.map(item => (
-      <AccessiblePressable key={item.id} accessibilityLabel={`Ver resultado do treino de ${new Date(item.completedAt).toLocaleString('pt-BR')}, ${item.problems.length} problemas`} onPress={() => router.push({ pathname: '/treinos/resultado', params: { id: item.id } })}>
-        <Card>
-          <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700' }}>{item.problems.length} problemas • Concluído</Text>
-          <Text style={{ color: colors.muted, marginTop: 8 }}>{new Date(item.completedAt).toLocaleString('pt-BR')}</Text>
-          <Text style={{ color: colors.primary, marginTop: 8 }}>Ver resultado ›</Text>
-        </Card>
-      </AccessiblePressable>
-    ))}
-    </MockData><SectionTitle>Participantes</SectionTitle>
+    <SectionTitle>Participantes</SectionTitle>
     <MockData label="Carregando participantes"><Card><View style={styles.row}>
       {['Você', ...mockFriends.map(friend => friend.handle)].map(name => <Choice key={name} label={name} selected={participants.includes(name)} onPress={() => setParticipants(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name])} />)}
     </View></Card>

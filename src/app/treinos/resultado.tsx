@@ -24,7 +24,6 @@ export default function ResultadoScreen() {
           <Text style={{ color: colors.muted, marginTop: 8 }}>{result.solved}/{completed.problems.length} resolvidos • {result.points} pontos</Text>
         </Card>)}
       </> : null}
-      <InfoBox tone="success">{`${training.problems.length} problemas demonstrativos gerados com sucesso.`}</InfoBox>
       <Card>
         <Text style={{ color: colors.text, fontSize: 16 }}>Participantes: {training.participants.join(', ')}</Text>
         <Text style={{ color: colors.text, fontSize: 16, marginTop: 8 }}>Dificuldade: {training.min} a {training.max}</Text>
@@ -35,9 +34,9 @@ export default function ResultadoScreen() {
         <Text style={{ color: colors.text, fontSize: 17, fontWeight: '700' }}>{problem.title}</Text>
         <Text style={{ color: colors.muted, fontSize: 15, marginTop: 8 }}>{problem.tag} • Dificuldade {problem.rating}</Text>
       </Card>)}
-      {!completed && !id ? <PrimaryButton title="Concluir treino demonstrativo" onPress={completeTraining} /> : null}
+      {!completed && !id ? <PrimaryButton title="Concluir treino" onPress={completeTraining} /> : null}
       <OutlineButton title="Ajustar opções do treino" onPress={() => goBack('/(tabs)/treino')} />
-      <PrimaryButton title="Ver placar demonstrativo" onPress={() => { router.dismissTo('/(tabs)'); router.navigate('/(tabs)/placar'); }} />
+      <PrimaryButton title="Ver placar" onPress={() => { router.dismissTo('/(tabs)'); router.navigate('/(tabs)/placar'); }} />
     </>}
   </Screen>;
 }

@@ -1,13 +1,34 @@
+# Dependências
 node_modules
+
+# Controle de versão
 .git
 .worktrees
+
+# Cache e arquivos do Expo
 .expo
+
+# Builds e artefatos
 dist
 web-build
 .test-build
 coverage
+
+# TypeScript
 *.tsbuildinfo
+
+# Logs
 npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Variáveis de ambiente
 .env
 .env.*
 !.env.example
+
+# Sistema operacional e editor
+.DS_Store
+Thumbs.db
+.vscode
+.idea

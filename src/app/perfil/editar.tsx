@@ -78,7 +78,6 @@ export default function EditarPerfilScreen() {
         O handle é usado para sincronizar rating, submissões e histórico.
       </Text>
 
-      <InfoBox>Alterações são mantidas nesta sessão após salvar. Voltar sem salvar descarta a edição.</InfoBox>
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
         title="Salvar alterações"
@@ -88,7 +87,7 @@ export default function EditarPerfilScreen() {
           if (message) return;
           const initials = nome.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
           setProfile(current => ({ ...current, name: nome.trim(), firstName: nome.trim().split(' ')[0], username: username.trim(), email: email.trim(), bio, editBio: bio, codeforcesHandle: handle.trim(), initials }));
-          setNotice({ message: 'Perfil atualizado nesta sessão.', tone: 'success' });
+          setNotice({ message: 'Perfil atualizado.', tone: 'success' });
           goBack('/perfil');
         }}
       />

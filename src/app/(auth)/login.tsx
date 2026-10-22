@@ -19,7 +19,6 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   function enter() {
     if (!login.trim() || !senha.trim()) { setError('Informe seu usuário e sua senha para continuar.'); return; }
-    setNotice({ message: 'Sessão de demonstração iniciada. Nenhuma credencial foi enviada.', tone: 'success' });
     setAuthenticated(true);
   }
   const [login, setLogin] = useState('carlos@email.com');
