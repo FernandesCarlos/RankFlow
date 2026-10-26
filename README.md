@@ -18,10 +18,46 @@ Aplicação de demonstração para **programação competitiva**, desenvolvida c
 - React Native
 - Expo e Expo Router
 - TypeScript
-- AsyncStorage para persistência local dos dados implementados
+- AsyncStorage para persistência local e modo offline
+- API REST em ASP.NET Core (C#) com PostgreSQL para sincronizar perfil e histórico de treinos
+- Docker Compose para subir PostgreSQL e API
 - lucide-react-native e react-native-svg
 - Docker para execução em ambiente conteinerizado
 - Jest e ferramentas de teste configuradas no projeto
+
+## Backend (C# + PostgreSQL)
+
+A Etapa 05 adiciona uma API REST em ASP.NET Core e persistência remota no PostgreSQL para perfil e histórico de treinos. A autenticação ainda é demonstrativa: o identificador remoto deriva do nome de usuário e não deve ser usado como identidade segura em produção.
+
+Requisitos adicionais: Docker com Compose ou .NET 8 SDK e PostgreSQL 16.
+
+Para subir o banco e a API:
+
+```bash
+docker compose -f docker-compose.backend.yml up --build
+```
+
+A API fica disponível em `http://localhost:5080`; verifique `http://localhost:5080/health`.
+
+Configure a URL no frontend antes de iniciar o Expo. Crie um arquivo `.env.local` com:
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://localhost:5080
+```
+
+Em emulador Android, use `http://10.0.2.2:5080`. Em dispositivo físico, use o endereço IP local do computador na mesma rede. Reinicie o Expo depois de alterar a variável. Sem essa variável, o aplicativo permanece em modo local com AsyncStorage.
+
+Para encerrar os serviços:
+
+```bash
+docker compose -f docker-compose.backend.yml down
+```
+
+Para remover também os dados persistidos no volume do PostgreSQL (ação destrutiva):
+
+```bash
+docker compose -f docker-compose.backend.yml down -v
+```
 
 ## Requisitos
 
@@ -75,7 +111,7 @@ A validação em dispositivos físicos também é recomendada para conferir nave
 
 ## Limitações
 
-O RankFlow é um protótipo demonstrativo. Não possui backend ou autenticação real. A geração de problemas, o placar, os resultados e os fluxos de Codeforces utilizam dados ou comportamentos simulados.
+O RankFlow ainda é um protótipo demonstrativo. A Etapa 05 adiciona backend para perfil e histórico de treinos, mas não implementa autenticação real. A identificação por nome de usuário é apenas demonstrativa. A geração de problemas, os resultados dos participantes, o placar, amigos, estatísticas e os fluxos de Codeforces continuam utilizando dados ou comportamentos simulados. Preferências e notificações permanecem locais.
 
 Os dados persistidos localmente dependem das funcionalidades implementadas no armazenamento do aplicativo. A persistência local não equivale à sincronização entre dispositivos ou a um serviço remoto.
 
@@ -86,6 +122,7 @@ A documentação detalhada está disponível na pasta [`docs/`](docs/):
 - [Proposta do projeto](docs/proposta.md)
 - [Documentação de navegação, UX, acessibilidade e testes](docs/etapa-03.md)
 - [Documentação de persistência local](docs/etapa-04.md)
+- [Backend e integração da Etapa 05](docs/etapa-05.md)
 
 Consulte esses arquivos para conhecer as decisões de implementação, os fluxos da aplicação, os procedimentos de teste e os detalhes técnicos.
 
