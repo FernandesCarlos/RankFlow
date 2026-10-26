@@ -10,6 +10,14 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mockProfile } from '../mocks';
 import type { Training } from '../services/forms';
+import {
+  backendEnabled,
+  deleteRemoteTraining,
+  getRemoteProfile,
+  getRemoteTrainings,
+  saveRemoteProfile,
+  saveRemoteTraining,
+} from '../services/backend';
 
 const initialNotifications = {
   allowed: true,
@@ -61,14 +69,16 @@ function useAppState() {
 
   // Indica se o carregamento inicial terminou.
   const [hydrated, setHydrated] = useState(false);
+  const [backendReady, setBackendReady] = useState(false);
   
   function deleteTraining(id: string) {
-    setTrainingHistory(current =>
-      current.filter(item => item.id !== id)
-    );
+    setTrainingHistory(current => current.filter(item => item.id !== id));
+    if (completedTrainingId === id) setCompletedTrainingId(null);
 
-    if (completedTrainingId === id) {
-      setCompletedTrainingId(null);
+    if (backendEnabled) {
+      deleteRemoteTraining(profile.username, id).catch(() => {
+        setNotice({ message: 'Treino removido localmente, mas não foi possível sincronizar a exclusão com o servidor.', tone: 'info' });
+      });
     }
   }
   
@@ -116,6 +126,60 @@ function useAppState() {
   
   []);
 
+  // Sincroniza perfil e histórico com a API quando ela está configurada.
+  useEffect(() => {
+    if (!hydrated || !backendEnabled) return;
+    let active = true;
+
+    async function syncBackend() {
+      try {
+        let remoteProfile: Record<string, unknown> | null = null;
+        try {
+          remoteProfile = await getRemoteProfile(profile.username);
+        } catch {
+          // Perfil novo ou API ainda sem esse registro: cria usando os dados locais.
+        }
+
+        if (remoteProfile && active) {
+          setProfile(current => ({ ...current, ...remoteProfile }));
+        } else {
+          await saveRemoteProfile(profile.username, profile as unknown as Record<string, unknown>);
+        }
+
+        const remoteHistory = await getRemoteTrainings<CompletedTraining[]>(profile.username);
+        const remoteIds = new Set(remoteHistory.map(item => item.id));
+        const localOnly = trainingHistory.filter(item => !remoteIds.has(item.id));
+        for (const item of localOnly) {
+          await saveRemoteTraining(profile.username, item);
+        }
+        if (active) {
+          const merged = new Map<string, CompletedTraining>();
+          [...remoteHistory, ...localOnly].forEach(item => merged.set(item.id, item));
+          setTrainingHistory([...merged.values()].sort((a, b) =>
+            b.completedAt.localeCompare(a.completedAt)
+          ));
+          setBackendReady(true);
+        }
+      } catch {
+        if (active) {
+          setNotice({ message: 'Não foi possível conectar à API. Os dados continuam disponíveis localmente.', tone: 'info' });
+        }
+      }
+    }
+
+    syncBackend();
+    return () => { active = false; };
+  // Sincronização inicial: username identifica a conta demonstrativa até existir autenticação real.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, profile.username]);
+
+  useEffect(() => {
+    if (!backendEnabled || !backendReady) return;
+    saveRemoteProfile(profile.username, profile as unknown as Record<string, unknown>).catch(() => {
+      setNotice({ message: 'Perfil salvo localmente; a sincronização com o servidor falhou.', tone: 'info' });
+    });
+  }, [backendReady, profile]);
+
   // Salva os dados quando algum estado persistido mudar.
   useEffect(() => {
     if (!hydrated) return;
@@ -159,6 +223,12 @@ function useAppState() {
 
     setTrainingHistory(current => [completed, ...current]);
     setCompletedTrainingId(id);
+
+    if (backendEnabled) {
+      saveRemoteTraining(profile.username, completed).catch(() => {
+        setNotice({ message: 'Treino concluído localmente, mas não foi possível sincronizá-lo com o servidor.', tone: 'info' });
+      });
+    }
   }
 
   function signOut() {
