@@ -42,7 +42,8 @@ app.MapGet("/api/users/{userId}/profile", async (string userId, NpgsqlDataSource
     await using var command = new NpgsqlCommand("SELECT profile FROM users WHERE id = @id", connection);
     command.Parameters.AddWithValue("id", userId);
     var result = await command.ExecuteScalarAsync();
-    return result is string json ? Results.Content(json, "application/json") : Results.NotFound(new { message = "Perfil não encontrado." });
+    if (result is string json) return Results.Content(json, "application/json");
+    return Results.NotFound(new { message = "Perfil não encontrado." });
 });
 
 app.MapPut("/api/users/{userId}/profile", async (string userId, JsonElement profile, NpgsqlDataSource dataSource) =>
@@ -116,7 +117,8 @@ app.MapDelete("/api/users/{userId}/trainings/{trainingId}", async (string userId
     command.Parameters.AddWithValue("user", userId);
     command.Parameters.AddWithValue("id", trainingId);
     var deleted = await command.ExecuteNonQueryAsync();
-    return deleted > 0 ? Results.NoContent() : Results.NotFound(new { message = "Treino não encontrado." });
+    if (deleted > 0) return Results.NoContent();
+    return Results.NotFound(new { message = "Treino não encontrado." });
 });
 
 app.Run();
