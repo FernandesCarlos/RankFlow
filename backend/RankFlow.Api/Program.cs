@@ -78,9 +78,13 @@ app.MapPost("/api/users/{userId}/trainings", async (string userId, JsonElement t
 {
     if (string.IsNullOrWhiteSpace(userId) || training.ValueKind != JsonValueKind.Object)
         return Results.BadRequest(new { message = "Envie um treino válido." });
-    if (!training.TryGetProperty("id", out var idElement) || string.IsNullOrWhiteSpace(idElement.GetString()))
-        return Results.BadRequest(new { message = "O treino precisa ter um identificador." });
-    if (!training.TryGetProperty("completedAt", out var dateElement) || !DateTimeOffset.TryParse(dateElement.GetString(), out var completedAt))
+    if (!training.TryGetProperty("id", out var idElement) ||
+        idElement.ValueKind != JsonValueKind.String ||
+        string.IsNullOrWhiteSpace(idElement.GetString()))
+        return Results.BadRequest(new { message = "O treino precisa ter um identificador textual." });
+    if (!training.TryGetProperty("completedAt", out var dateElement) ||
+        dateElement.ValueKind != JsonValueKind.String ||
+        !DateTimeOffset.TryParse(dateElement.GetString(), out var completedAt))
         return Results.BadRequest(new { message = "Informe uma data de conclusão válida." });
 
     var json = training.GetRawText();
