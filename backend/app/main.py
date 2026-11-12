@@ -11,7 +11,7 @@ from app import codeforces
 from app.auth import router as auth_router
 cfg=settings();Base.metadata.create_all(bind=engine)
 app=FastAPI(title="RankFlow API",version="0.6.0")
-app.add_middleware(SessionMiddleware,secret_key=cfg.session_secret,https_only=False,same_site="lax")
+app.add_middleware(SessionMiddleware,secret_key=cfg.session_secret,https_only=cfg.app_env=="production",same_site="lax")
 app.add_middleware(CORSMiddleware,allow_origins=cfg.origins,allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 app.include_router(auth_router,prefix="/api")
 bearer=HTTPBearer()
