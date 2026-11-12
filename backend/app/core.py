@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 class Settings(BaseSettings):
+    app_env: str = "development"
     database_url: str = "postgresql+psycopg://rankflow:rankflow@localhost:5432/rankflow"
     jwt_secret: str
     jwt_expire_minutes: int = 10080
