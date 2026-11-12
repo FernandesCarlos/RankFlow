@@ -8,7 +8,9 @@ web-build/
 expo-env.d.ts
 
 # local env files
-.env*.local
+.env
+.env.*
+backend/.env
 
 # TypeScript
 *.tsbuildinfo
