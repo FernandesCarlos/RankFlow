@@ -202,6 +202,11 @@ function useAppState() {
 
   function completeTraining() {
     if (!training || completedTrainingId) return;
+    const existing = trainingHistory.find((item) => item.sessionId && item.sessionId === training.sessionId);
+    if (existing) {
+      setCompletedTrainingId(existing.id);
+      return;
+    }
     const id = `${Date.now()}-${trainingHistory.length + 1}`;
     const completed: CompletedTraining = {
       ...training,
