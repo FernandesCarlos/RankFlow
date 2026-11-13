@@ -130,7 +130,7 @@ export default function TreinoScreen() {
     }
 
     const localStart = new Date(`${startDate}T${startTime}:00`);
-    if (!startDate || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(startTime) || Number.isNaN(localStart.getTime())) {
+    if (!startDate || !/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || Number.isNaN(localStart.getTime())) {
       setError('Informe uma data e um horário de início válidos.');
       return;
     }
