@@ -1,5 +1,3 @@
-declare const process: { env: { EXPO_PUBLIC_API_URL?: string } };
-
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 export type CodeforcesUser = {
