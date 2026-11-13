@@ -85,7 +85,7 @@ export default function HistoricoScreen() {
             {activeSession?.status === 'scheduled' ? 'Agendado' : activeSession?.status === 'finished' ? 'Concluído — aguardando salvar' : 'Em andamento'}
           </Text>
           <Text style={{ color: colors.muted, marginTop: 7 }}>
-            {training.problems.length} problemas · {training.participants.join(', ')}
+            {training?.problems.length ?? 0} problemas · {training?.participants.join(', ') ?? ''}
           </Text>
           {activeSession?.startedAt ? <Text style={{ color: colors.muted, marginTop: 5 }}>
             Início: {new Date(activeSession.startedAt).toLocaleString('pt-BR')}
