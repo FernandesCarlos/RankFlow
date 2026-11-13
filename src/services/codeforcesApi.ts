@@ -9,6 +9,12 @@ export type CodeforcesUser = {
   avatar?: string;
   titlePhoto?: string;
   contribution?: number;
+  firstName?: string;
+  lastName?: string;
+  country?: string;
+  city?: string;
+  organization?: string;
+  registrationTimeSeconds?: number;
 };
 
 export type CodeforcesRatingChange = {
@@ -20,30 +26,36 @@ export type CodeforcesRatingChange = {
   newRating: number;
 };
 
-export type CodeforcesSubmission = {
-  id: number;
-  contestId?: number;
-  creationTimeSeconds: number;
-  verdict?: string;
-  problem: {
-    contestId?: number;
-    index: string;
-    name: string;
-    rating?: number;
-    tags: string[];
-  };
+export type CodeforcesProblem = {
+  id: string;
+  contestId: number;
+  index: string;
+  title: string;
+  rating: number;
+  tags: string[];
+  tag: string;
+  url: string;
 };
 
 export type CodeforcesSummary = {
   user: CodeforcesUser;
   ratingHistory: CodeforcesRatingChange[];
-  submissions: CodeforcesSubmission[];
   solvedCount: number;
+  submissionCount: number;
   contestCount: number;
   tagStats: { tag: string; solved: number }[];
   ratingGainLastFive: number;
   recentRating: number[];
   lastSubmissionAt?: number;
+};
+
+export type CodeforcesTraining = {
+  quantity: number;
+  min: number;
+  max: number;
+  tags: string[];
+  problems: CodeforcesProblem[];
+  participants: string[];
 };
 
 async function request<T>(path: string): Promise<T> {
@@ -76,74 +88,34 @@ export function getCodeforcesRating(handle: string): Promise<CodeforcesRatingCha
   return request<CodeforcesRatingChange[]>(`/api/codeforces/users/${encodeURIComponent(handle.trim())}/rating`);
 }
 
-export function getCodeforcesSubmissions(
-  handle: string,
-  count = 1000
-): Promise<CodeforcesSubmission[]> {
-  return request<CodeforcesSubmission[]>(
-    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/submissions?count=${count}`
+export function getCodeforcesSummary(handle: string): Promise<CodeforcesSummary> {
+  if (!handle.trim()) throw new Error('Informe um handle do Codeforces.');
+  return request<CodeforcesSummary>(
+    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/summary`
   );
 }
 
-function getSolvedProblems(submissions: CodeforcesSubmission[]) {
-  const accepted = new Map<string, CodeforcesSubmission['problem']>();
-  for (const submission of submissions) {
-    if (submission.verdict !== 'OK') continue;
-    const problem = submission.problem;
-    const contestId = problem.contestId ?? submission.contestId;
-    const key = `${contestId ?? 'gym'}-${problem.index}`;
-    if (!accepted.has(key)) accepted.set(key, problem);
-  }
-  return [...accepted.values()];
+export async function getCodeforcesProblemTags(): Promise<string[]> {
+  const result = await request<{ tags: string[] }>('/api/codeforces/problem-tags');
+  return result.tags;
 }
 
-export function buildCodeforcesSummary(
-  user: CodeforcesUser,
-  ratingHistory: CodeforcesRatingChange[],
-  submissions: CodeforcesSubmission[]
-): CodeforcesSummary {
-  const solved = getSolvedProblems(submissions);
-  const tags = new Map<string, number>();
-  for (const problem of solved) {
-    for (const tag of problem.tags ?? []) tags.set(tag, (tags.get(tag) ?? 0) + 1);
-  }
-
-  const lastFive = ratingHistory.slice(-5);
-  const ratingGainLastFive = lastFive.reduce(
-    (total, contest) => total + contest.newRating - contest.oldRating,
-    0
+export function generateCodeforcesTraining(input: {
+  handle: string;
+  quantity: number;
+  min: number;
+  max: number;
+  tags: string[];
+}): Promise<Omit<CodeforcesTraining, 'participants'>> {
+  const params = new URLSearchParams({
+    quantity: String(input.quantity),
+    min_rating: String(input.min),
+    max_rating: String(input.max),
+  });
+  if (input.tags.length) params.set('tags', input.tags.join(','));
+  return request(
+    `/api/codeforces/users/${encodeURIComponent(input.handle.trim())}/training?${params.toString()}`
   );
-  const latestSubmission = submissions.reduce<number | undefined>(
-    (latest, item) => Math.max(latest ?? 0, item.creationTimeSeconds),
-    undefined
-  );
-
-  return {
-    user,
-    ratingHistory,
-    submissions,
-    solvedCount: solved.length,
-    contestCount: ratingHistory.length,
-    tagStats: [...tags.entries()]
-      .map(([tag, count]) => ({ tag, solved: count }))
-      .sort((a, b) => b.solved - a.solved),
-    ratingGainLastFive,
-    recentRating: ratingHistory.slice(-7).map((item) => item.newRating),
-    lastSubmissionAt: latestSubmission,
-  };
-}
-
-export async function getCodeforcesSummary(handle: string): Promise<CodeforcesSummary> {
-  const normalized = handle.trim();
-  if (!normalized) throw new Error('Informe um handle do Codeforces.');
-
-  const [user, ratingHistory, submissions] = await Promise.all([
-    getCodeforcesUser(normalized),
-    getCodeforcesRating(normalized),
-    getCodeforcesSubmissions(normalized),
-  ]);
-
-  return buildCodeforcesSummary(user, ratingHistory, submissions);
 }
 
 export function getCodeforcesRank(user: CodeforcesUser): string {
