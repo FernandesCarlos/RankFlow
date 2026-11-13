@@ -12,7 +12,7 @@ import uuid
 
 from app.core import settings
 from app.database import Base, engine, get_db
-from app.models import User, TrainingSession, TrainingSubmission
+from app.models import User, TrainingSession
 from app import codeforces
 from app.auth import router as auth_router
 
@@ -221,7 +221,6 @@ def _session_payload(session: TrainingSession, db: Session):
     if status != session.status:
         session.status = status
         db.commit()
-    submissions = db.query(TrainingSubmission).filter_by(session_id=session.id).order_by(TrainingSubmission.submitted_at.asc()).all()
     return {
         "id": session.id,
         "title": session.title,
@@ -233,14 +232,7 @@ def _session_payload(session: TrainingSession, db: Session):
         "endsAt": ends_at.isoformat(),
         "status": status,
         "serverNow": now.isoformat(),
-        "submissions": [{
-            "id": item.id,
-            "participant": item.participant,
-            "problemId": item.problem_id,
-            "verdict": item.verdict,
-            "points": item.points,
-            "submittedAt": item.submitted_at.isoformat() if item.submitted_at else None,
-        } for item in submissions],
+        "submissions": [],
     }
 
 
@@ -299,50 +291,12 @@ def get_training_session(session_id: str, db: Session = Depends(get_db)):
     return _session_payload(session, db)
 
 
-@app.post("/api/trainings/{session_id}/submissions")
-def submit_training_attempt(session_id: str, payload: dict, db: Session = Depends(get_db)):
-    session = db.get(TrainingSession, session_id)
-    if not session:
-        raise HTTPException(404, "Treino não encontrado.")
-    now = datetime.now(timezone.utc)
-    ends_at = session.ends_at if session.ends_at.tzinfo else session.ends_at.replace(tzinfo=timezone.utc)
-    started_at = session.started_at if session.started_at.tzinfo else session.started_at.replace(tzinfo=timezone.utc)
-    if now < started_at:
-        raise HTTPException(409, "Este treino ainda não começou.")
-    if session.status == "finished" or now >= ends_at:
-        session.status = "finished"
-        db.commit()
-        raise HTTPException(409, "O tempo deste treino terminou.")
-    participant = str(payload.get("participant", "")).strip()
-    problem_id = str(payload.get("problemId", "")).strip()
-    verdict = str(payload.get("verdict", "")).upper()
-    if participant not in session.participants:
-        raise HTTPException(403, "Participante não faz parte deste treino.")
-    problem = next((p for p in session.problems if str(p.get("id")) == problem_id), None)
-    if not problem:
-        raise HTTPException(404, "Problema não pertence a este treino.")
-    if verdict not in {"OK", "WRONG_ANSWER", "TIME_LIMIT_EXCEEDED", "RUNTIME_ERROR"}:
-        raise HTTPException(422, "Resultado de simulação inválido.")
-    already_solved = db.query(TrainingSubmission).filter_by(
-        session_id=session.id, participant=participant, problem_id=problem_id, verdict="OK"
-    ).first()
-    if already_solved:
-        raise HTTPException(409, "Este participante já pontuou neste problema.")
-    points = (100 + int(problem.get("rating") or 0) // 10) if verdict == "OK" else 0
-    submission = TrainingSubmission(
-        id=str(uuid.uuid4()), session_id=session.id, participant=participant,
-        problem_id=problem_id, verdict=verdict, points=points, submitted_at=now,
-    )
-    db.add(submission)
-    db.commit()
-    return _session_payload(session, db)
-
-
 @app.get("/api/trainings/{session_id}/scoreboard")
 async def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
     session = db.get(TrainingSession, session_id)
     if not session:
         raise HTTPException(404, "Treino não encontrado.")
+
     payload = _session_payload(session, db)
     start_at = session.started_at
     if start_at.tzinfo is None:
@@ -352,63 +306,137 @@ async def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
         end_at = end_at.replace(tzinfo=timezone.utc)
 
     problem_by_id = {str(problem.get("id")): problem for problem in session.problems}
-    actual_attempts = []
+    all_attempts = []
+
+    # O placar usa exclusivamente submissões públicas reais do Codeforces.
     for handle in session.participants:
         try:
-            # Consulta as submissões públicas mais recentes diretamente no Codeforces.
             remote = await codeforces.status(handle, 1000, refresh=True)
         except HTTPException:
-            # Um participante sem histórico público não impede o placar dos demais.
             continue
+
         for submission in remote:
             created = submission.get("creationTimeSeconds")
             problem = submission.get("problem") or {}
             contest_id = problem.get("contestId") or submission.get("contestId")
             index = problem.get("index")
             problem_id = f"{contest_id}-{index}" if contest_id and index else ""
-            if not created or not problem_id or problem_id not in problem_by_id:
+            if not created or problem_id not in problem_by_id:
                 continue
+
             submitted_at = datetime.fromtimestamp(created, tz=timezone.utc)
             if submitted_at < start_at or submitted_at > end_at:
                 continue
-            verdict = submission.get("verdict") or "TESTING"
-            actual_attempts.append({
+
+            all_attempts.append({
                 "id": f"codeforces-{submission.get('id')}",
                 "participant": handle,
                 "problemId": problem_id,
-                "verdict": verdict,
-                "points": 0,
+                "verdict": submission.get("verdict") or "TESTING",
                 "submittedAt": submitted_at.isoformat(),
             })
 
-    all_attempts = payload["submissions"] + actual_attempts
-    # Cada participante pontua uma única vez por problema, mesmo se houver
-    # registro simulado e submissão real Accepted para o mesmo problema.
-    accepted = set()
-    for attempt in sorted(all_attempts, key=lambda item: item.get("submittedAt") or ""):
-        if attempt["verdict"] == "OK":
-            key = (attempt["participant"], attempt["problemId"])
-            if key in accepted:
-                attempt["points"] = 0
-            else:
-                if not attempt.get("points"):
-                    problem = problem_by_id.get(key[1], {})
-                    attempt["points"] = 100 + int(problem.get("rating") or 0) // 10
-                accepted.add(key)
-    payload["submissions"] = all_attempts
-    rows = []
+    all_attempts.sort(key=lambda item: item["submittedAt"])
+    problem_results = []
+    ranking = []
+
     for handle in session.participants:
-        attempts = [item for item in all_attempts if item["participant"] == handle]
-        solved = {item["problemId"] for item in attempts if item["verdict"] == "OK"}
-        rows.append({
+        participant_attempts = [
+            item for item in all_attempts if item["participant"] == handle
+        ]
+        solved_count = 0
+        penalty_seconds = 0
+
+        for problem in session.problems:
+            problem_id = str(problem.get("id"))
+            attempts = [
+                item for item in participant_attempts
+                if item["problemId"] == problem_id
+            ]
+            attempts.sort(key=lambda item: item["submittedAt"])
+
+            accepted_attempt = next(
+                (item for item in attempts if item["verdict"] == "OK"),
+                None,
+            )
+            judged_attempts = [
+                item for item in attempts
+                if item["verdict"] not in {"TESTING", "PENDING"}
+            ]
+            wrong_before_accept = 0
+            if accepted_attempt:
+                accepted_time = accepted_attempt["submittedAt"]
+                wrong_before_accept = sum(
+                    1 for item in attempts
+                    if item["submittedAt"] <= accepted_time
+                    and item["verdict"] not in {"OK", "TESTING", "PENDING"}
+                )
+                elapsed = max(
+                    0,
+                    int((
+                        datetime.fromisoformat(accepted_time) - start_at
+                    ).total_seconds()),
+                )
+                solved_count += 1
+                penalty_seconds += elapsed + wrong_before_accept * 600
+                status = "accepted"
+                elapsed_seconds = elapsed
+                last_submitted_at = accepted_time
+            elif judged_attempts:
+                status = "error"
+                wrong_before_accept = len([
+                    item for item in judged_attempts if item["verdict"] != "OK"
+                ])
+                last_submitted_at = attempts[-1]["submittedAt"]
+                elapsed_seconds = max(
+                    0,
+                    int((
+                        datetime.fromisoformat(last_submitted_at) - start_at
+                    ).total_seconds()),
+                )
+            elif attempts:
+                status = "pending"
+                last_submitted_at = attempts[-1]["submittedAt"]
+                elapsed_seconds = max(
+                    0,
+                    int((
+                        datetime.fromisoformat(last_submitted_at) - start_at
+                    ).total_seconds()),
+                )
+            else:
+                status = "not_submitted"
+                last_submitted_at = None
+                elapsed_seconds = None
+
+            problem_results.append({
+                "participant": handle,
+                "problemId": problem_id,
+                "status": status,
+                "attempts": len(attempts),
+                "wrongAttempts": wrong_before_accept,
+                "elapsedSeconds": elapsed_seconds,
+                "submittedAt": last_submitted_at,
+                "verdict": accepted_attempt["verdict"] if accepted_attempt else (
+                    attempts[-1]["verdict"] if attempts else None
+                ),
+            })
+
+        ranking.append({
             "participant": handle,
-            "solved": len(solved),
-            "points": sum(item["points"] for item in attempts),
-            "attempts": len(attempts),
+            "solved": solved_count,
+            "penaltySeconds": penalty_seconds,
+            "attempts": len(participant_attempts),
             "lastSubmissionAt": max(
-                (item["submittedAt"] for item in attempts if item.get("submittedAt")),
+                (item["submittedAt"] for item in participant_attempts),
                 default=None,
             ),
         })
-    rows.sort(key=lambda row: (-row["points"], -row["solved"], row["attempts"]))
-    return {**payload, "ranking": rows}
+
+    # Critério de competição: mais problemas aceitos; desempate por menor penalidade.
+    ranking.sort(key=lambda row: (-row["solved"], row["penaltySeconds"], row["participant"].lower()))
+    payload["submissions"] = all_attempts
+    return {
+        **payload,
+        "ranking": ranking,
+        "problemResults": problem_results,
+    }
