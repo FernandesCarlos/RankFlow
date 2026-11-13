@@ -184,6 +184,7 @@ function useAppState() {
     setVerificationOrigin,
     notice,
     setNotice,
+    hydrated,
     signOut,
   };
 }
