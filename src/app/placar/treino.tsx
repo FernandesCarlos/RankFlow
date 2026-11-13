@@ -28,6 +28,11 @@ export default function TrainingScoreboardScreen() {
   }, [sessionId]);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!sessionId) return;
+    const poll = setInterval(refresh, 5000);
+    return () => clearInterval(poll);
+  }, [sessionId, refresh]);
 
   return (
     <Screen>
