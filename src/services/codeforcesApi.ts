@@ -105,6 +105,14 @@ export async function getCodeforcesProblemTags(): Promise<string[]> {
   return result.tags;
 }
 
+export async function searchCodeforcesProblems(query: string): Promise<CodeforcesProblem[]> {
+  const params = new URLSearchParams({ q: query.trim() });
+  const result = await request<{ problems: CodeforcesProblem[] }>(
+    `/api/codeforces/problems/search?${params.toString()}`
+  );
+  return result.problems;
+}
+
 export function generateCodeforcesTraining(input: {
   handle: string;
   quantity: number;
