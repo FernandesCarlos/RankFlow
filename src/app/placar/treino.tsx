@@ -9,7 +9,7 @@ import { getTrainingScoreboard, type TrainingScoreboard } from '../../services/c
 function formatPenalty(seconds: number) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  return hours > 0 ? \`\${hours}h \${minutes}min\` : \`\${minutes}min\`;
+  return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
 }
 
 export default function TrainingScoreboardScreen() {
