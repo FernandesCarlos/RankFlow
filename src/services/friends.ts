@@ -1,5 +1,4 @@
 import {
-  buildCodeforcesSummary,
   getCodeforcesSummary,
   type CodeforcesSummary,
 } from './codeforcesApi';
