@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
@@ -16,11 +16,6 @@ export function LoadingSkeleton({ label = 'Carregando dados' }: { label?: string
       </View>
     </View>
   );
-}
-
-// Mantido como wrapper de compatibilidade; o carregamento real é controlado pela tela/API.
-export function MockData({ children }: { children: ReactNode; label?: string; resourceKey?: string }) {
-  return <>{children}</>;
 }
 
 const styles = StyleSheet.create({
