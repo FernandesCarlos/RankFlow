@@ -39,6 +39,11 @@ export default function ResultadoScreen() {
 
   useEffect(() => { refreshSession(); }, [refreshSession]);
   useEffect(() => {
+    if (!training?.sessionId) return;
+    const poll = setInterval(refreshSession, 5000);
+    return () => clearInterval(poll);
+  }, [training?.sessionId, refreshSession]);
+  useEffect(() => {
     const timer = setInterval(() => {
       if (!session) return;
       const seconds = Math.max(0, Math.floor((new Date(session.endsAt).getTime() - Date.now()) / 1000));
