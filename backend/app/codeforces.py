@@ -74,27 +74,27 @@ def _write_persistent_cache(key, method, payload):
         db.close()
 
 
-async def call(method, params=None):
+async def call(method, params=None, force_refresh=False):
     global _last
     normalized_params = params or {}
     key = _cache_key(method, normalized_params)
     ttl = _ttl(method)
 
     cached = _cache.get(key)
-    if cached and time.monotonic() - cached[0] < ttl:
+    if not force_refresh and cached and time.monotonic() - cached[0] < ttl:
         return cached[1]
 
-    persistent = _read_persistent_cache(key, ttl)
+    persistent = None if force_refresh else _read_persistent_cache(key, ttl)
     if persistent is not None:
         _cache[key] = (time.monotonic(), persistent)
         return persistent
 
     async with _lock:
         cached = _cache.get(key)
-        if cached and time.monotonic() - cached[0] < ttl:
+        if not force_refresh and cached and time.monotonic() - cached[0] < ttl:
             return cached[1]
 
-        persistent = _read_persistent_cache(key, ttl)
+        persistent = None if force_refresh else _read_persistent_cache(key, ttl)
         if persistent is not None:
             _cache[key] = (time.monotonic(), persistent)
             return persistent
@@ -135,8 +135,8 @@ async def rating(handle):
     return await call("user.rating", {"handle": handle.strip()})
 
 
-async def status(handle, count=100):
-    return await call("user.status", {"handle": handle.strip(), "from": 1, "count": count})
+async def status(handle, count=100, refresh=False):
+    return await call("user.status", {"handle": handle.strip(), "from": 1, "count": count}, force_refresh=refresh)
 
 
 async def problems(tags=None):
