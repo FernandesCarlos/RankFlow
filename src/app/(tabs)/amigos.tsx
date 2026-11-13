@@ -10,7 +10,7 @@ import { getCodeforcesUser } from '../../services/codeforcesApi';
 import { loadFriendSummaries, summarizeFriendError, type FriendSummary } from '../../services/friends';
 
 export default function AmigosScreen() {
-  const { profile, friendHandles, addFriendHandle, removeFriendHandle, hydrated } = useApp();
+  const { friendHandles, addFriendHandle, removeFriendHandle, hydrated } = useApp();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,7 @@ export default function AmigosScreen() {
     }
   }
 
-  async function remove(handle: string) {
+  function remove(handle: string) {
     removeFriendHandle(handle);
     setFriends((current) => current.filter((friend) => friend.handle !== handle));
   }
