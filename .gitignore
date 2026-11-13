@@ -21,3 +21,6 @@ backend/.env
 
 .test-build/
 .worktrees/
+
+# Keep the mobile environment template versioned
+!.env.example
