@@ -60,7 +60,7 @@ export default function HomeScreen() {
         <View style={styles.quickRow}>
           <QuickCard label="Problemas" value={String(data.solvedCount)} />
           <QuickCard label="Contests" value={String(data.contestCount)} />
-          <QuickCard label="Submissões" value={String(data.submissions.length)} />
+          <QuickCard label="Submissões" value={String(data.submissionCount)} />
         </View>
 
         <Pressable accessibilityRole="button" accessibilityLabel="Ver estatísticas detalhadas" onPress={() => router.push('/estatisticas')}>
