@@ -196,8 +196,20 @@ export type TrainingAttempt = {
   submittedAt: string | null;
 };
 
+export type TrainingProblemResult = {
+  participant: string;
+  problemId: string;
+  status: 'not_submitted' | 'pending' | 'error' | 'accepted';
+  attempts: number;
+  wrongAttempts: number;
+  elapsedSeconds: number | null;
+  submittedAt: string | null;
+  verdict: string | null;
+};
+
 export type TrainingScoreboard = TrainingSession & {
-  ranking: { participant: string; solved: number; points: number; attempts: number; lastSubmissionAt: string | null }[];
+  ranking: { participant: string; solved: number; penaltySeconds: number; attempts: number; lastSubmissionAt: string | null }[];
+  problemResults: TrainingProblemResult[];
 };
 
 export function createTrainingSession(input: {
@@ -220,24 +232,4 @@ export function getTrainingSession(id: string): Promise<TrainingSession> {
 
 export function getTrainingScoreboard(id: string): Promise<TrainingScoreboard> {
   return request<TrainingScoreboard>(`/api/trainings/${encodeURIComponent(id)}/scoreboard`);
-}
-
-export function simulateTrainingSubmission(input: {
-  sessionId: string;
-  participant: string;
-  problemId: string;
-  verdict: 'OK' | 'WRONG_ANSWER' | 'TIME_LIMIT_EXCEEDED' | 'RUNTIME_ERROR';
-}): Promise<TrainingSession> {
-  return request<TrainingSession>(
-    `/api/trainings/${encodeURIComponent(input.sessionId)}/submissions`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        participant: input.participant,
-        problemId: input.problemId,
-        verdict: input.verdict,
-      }),
-    },
-  );
 }
