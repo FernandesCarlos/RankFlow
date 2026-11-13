@@ -33,4 +33,6 @@ export type Training = {
   tags: string[];
   participants: string[];
   problems: TrainingProblem[];
+  durationMinutes?: number;
+  sessionId?: string;
 };
