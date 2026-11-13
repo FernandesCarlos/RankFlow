@@ -1,3 +1,5 @@
+import { getStoredToken } from './auth';
+
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 export type CodeforcesUser = {
@@ -61,7 +63,10 @@ export type CodeforcesTraining = {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, init);
+    const token = await getStoredToken();
+    const headers = new Headers(init?.headers || {});
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
   } catch {
     throw new Error(
       `Não foi possível conectar ao RankFlow API em ${API_BASE_URL}. Confira se o backend está ativo e se EXPO_PUBLIC_API_URL aponta para o endereço acessível pelo dispositivo.`
@@ -170,7 +175,7 @@ export type TrainingSession = {
   durationMinutes: number;
   startedAt: string;
   endsAt: string;
-  status: 'active' | 'finished';
+  status: 'scheduled' | 'active' | 'finished';
   serverNow: string;
   submissions: TrainingAttempt[];
 };
@@ -193,6 +198,7 @@ export function createTrainingSession(input: {
   participants: string[];
   problems: CodeforcesProblem[];
   durationMinutes: number;
+  startAt?: string;
 }): Promise<TrainingSession> {
   return request<TrainingSession>('/api/trainings', {
     method: 'POST',
