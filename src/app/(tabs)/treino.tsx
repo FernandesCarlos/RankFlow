@@ -17,6 +17,7 @@ import { useApp } from '../../state/AppContext';
 import {
   generateCodeforcesTraining,
   getCodeforcesProblemTags,
+  createTrainingSession,
 } from '../../services/codeforcesApi';
 
 export default function TreinoScreen() {
@@ -27,6 +28,7 @@ export default function TreinoScreen() {
   const [participants, setParticipants] = useState<string[]>([]);
   const [min, setMin] = useState('1000');
   const [max, setMax] = useState('1500');
+  const [duration, setDuration] = useState('60');
   const [loadingTags, setLoadingTags] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -89,6 +91,12 @@ export default function TreinoScreen() {
       return;
     }
 
+    const durationMinutes = Number(duration);
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 5 || durationMinutes > 360) {
+      setError('A duração deve ser um número inteiro entre 5 e 360 minutos.');
+      return;
+    }
+
     setGenerating(true);
     setError('');
     try {
@@ -99,9 +107,17 @@ export default function TreinoScreen() {
         max: maxRating,
         tags,
       });
+      const session = await createTrainingSession({
+        creatorHandle: profile.codeforcesHandle,
+        participants,
+        problems: result.problems,
+        durationMinutes,
+      });
       setTraining({
         ...result,
         participants,
+        durationMinutes,
+        sessionId: session.id,
       });
       router.push('/treinos/resultado');
     } catch (err) {
@@ -160,6 +176,12 @@ export default function TreinoScreen() {
         </View>
       </Card>
 
+      <SectionTitle>Duração do treino</SectionTitle>
+      <Card>
+        <Field label="Tempo em minutos (5 a 360)" value={duration} onChangeText={setDuration} keyboardType="number-pad" />
+        <Text style={styles.description}>O cronômetro começa assim que o treino é criado. O placar acompanha as tentativas registradas durante esse período.</Text>
+      </Card>
+
       <SectionTitle>Tags do Codeforces</SectionTitle>
       {loadingTags ? <LoadingSkeleton label="Carregando tags disponíveis no Codeforces" /> : null}
       {tagError ? <InfoBox tone="danger">{tagError}</InfoBox> : null}
@@ -180,7 +202,7 @@ export default function TreinoScreen() {
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <InfoBox>Os problemas são consultados no problemset público do Codeforces. O RankFlow remove os problemas que já aparecem como resolvidos no histórico público do seu handle.</InfoBox>
       <PrimaryButton
-        title={generating ? 'Buscando problemas reais…' : 'Gerar treino'}
+        title={generating ? 'Criando competição…' : 'Gerar treino e iniciar cronômetro'}
         onPress={generate}
         disabled={!hydrated || generating || loadingTags || Boolean(tagError)}
         loading={generating}
