@@ -107,7 +107,24 @@ function useAppState() {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved) {
           const data: PersistedAppState = JSON.parse(saved);
-          if (data.profile) setProfile({ ...defaultProfile, ...data.profile });
+          if (data.profile) {
+            const restoredProfile = { ...defaultProfile, ...data.profile };
+            const wasSeedProfile =
+              data.profile.codeforcesHandle === 'FernandesCarlos' &&
+              data.profile.email === 'carlos@email.com' &&
+              data.profile.rating === 1482 &&
+              data.profile.problemsSolved === 327;
+            if (wasSeedProfile) {
+              restoredProfile.codeforcesHandle = '';
+              restoredProfile.rank = '';
+              restoredProfile.rating = 0;
+              restoredProfile.maxRating = 0;
+              restoredProfile.problemsSolved = 0;
+              restoredProfile.streakDays = 0;
+              restoredProfile.contests = 0;
+            }
+            setProfile(restoredProfile);
+          }
           if (data.notifications) {
             setNotifications({ ...initialNotifications, ...data.notifications });
           }
