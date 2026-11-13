@@ -65,6 +65,7 @@ export default function LoginScreen() {
           value={login}
           onChangeText={setLogin}
           placeholder="voce@email.com"
+          keyboardType="email-address"
           autoCapitalize="none"
         />
 
