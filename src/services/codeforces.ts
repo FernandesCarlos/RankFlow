@@ -5,7 +5,7 @@ import {
 
 export type CodeforcesProfile = {
   handle: string;
-  rating: number;
+  rating: number | null;
   rank: string;
   ranking: string;
   memberSince: number;
@@ -20,7 +20,7 @@ export async function findCodeforcesUser(
   const user = await getCodeforcesUser(normalizedHandle);
   return {
     handle: user.handle,
-    rating: user.rating ?? 0,
+    rating: user.rating ?? null,
     rank: user.rank ?? 'Unrated',
     ranking: user.rank ?? 'Unrated',
     memberSince: user.registrationTimeSeconds ?? 0,
