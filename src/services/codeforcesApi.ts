@@ -113,7 +113,7 @@ export function generateCodeforcesTraining(input: {
     max_rating: String(input.max),
   });
   if (input.tags.length) params.set('tags', input.tags.join(','));
-  return request(
+  return request<Omit<CodeforcesTraining, 'participants'>>(
     `/api/codeforces/users/${encodeURIComponent(input.handle.trim())}/training?${params.toString()}`
   );
 }
