@@ -158,3 +158,8 @@ async def codeforces_training(
         max_rating,
         selected_tags,
     )
+
+
+@app.get("/api/codeforces/users/{handle}/verification-problem")
+async def codeforces_verification_problem(handle: str):
+    return await codeforces.generate_training(handle, 1, 800, 1200, [])
