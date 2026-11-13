@@ -60,7 +60,7 @@ export default function AmigoScreen() {
             </View>
           )) : <Text style={styles.caption}>Sem dados de tags na amostra de submissões.</Text>}
         </Card>
-        <Text style={styles.caption}>Contagem calculada com até 1000 submissões recentes consultadas na API do Codeforces.</Text>
+        <Text style={styles.caption}>Contagem calculada percorrendo o histórico público de submissões aceitas do Codeforces.</Text>
       </> : null}
     </Screen>
   );
