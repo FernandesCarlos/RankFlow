@@ -89,7 +89,7 @@ export function getCodeforcesRating(handle: string): Promise<CodeforcesRatingCha
 }
 
 export function getCodeforcesSummary(handle: string): Promise<CodeforcesSummary> {
-  if (!handle.trim()) throw new Error('Informe um handle do Codeforces.');
+  if (!handle.trim()) return Promise.reject(new Error('Vincule seu handle do Codeforces nas configurações de plataformas.'));
   return request<CodeforcesSummary>(
     `/api/codeforces/users/${encodeURIComponent(handle.trim())}/summary`
   );
