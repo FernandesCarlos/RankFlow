@@ -112,7 +112,20 @@ function useAppState() {
             setNotifications({ ...initialNotifications, ...data.notifications });
           }
           if (typeof data.publicProfile === 'boolean') setPublicProfile(data.publicProfile);
-          if (Array.isArray(data.trainingHistory)) setTrainingHistory(data.trainingHistory);
+          if (Array.isArray(data.trainingHistory)) {
+            // Descarta históricos antigos gerados por treinos fictícios.
+            const realTrainings = data.trainingHistory.filter((item) =>
+              Array.isArray(item.problems) &&
+              item.problems.length > 0 &&
+              item.problems.every((problem) =>
+                typeof problem.url === 'string' &&
+                problem.url.startsWith('https://codeforces.com/problemset/problem/') &&
+                typeof problem.contestId === 'number' &&
+                typeof problem.index === 'string'
+              )
+            );
+            setTrainingHistory(realTrainings);
+          }
           if (Array.isArray(data.friendHandles)) {
             setFriendHandles([...new Set(data.friendHandles.filter((item) => typeof item === 'string' && item.trim()))]);
           }
