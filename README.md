@@ -1,21 +1,24 @@
 # RankFlow
 
-Aplicativo mobile para programação competitiva, desenvolvido com React Native, Expo, Expo Router e TypeScript. O projeto está evoluindo de um protótipo com dados demonstrativos para uma aplicação com backend e integração real com o Codeforces.
+Aplicativo mobile para programação competitiva, desenvolvido com React Native, Expo, Expo Router e TypeScript. O projeto integra dados públicos do Codeforces por meio de um backend próprio.
 
 ## Funcionalidades
 
-- Acompanhamento de desempenho e estatísticas competitivas.
+- Acompanhamento de rating atual e máximo.
+- Histórico de contests e evolução de rating.
+- Estatísticas de problemas resolvidos por tag.
+- Cadastro local de amigos por handle público do Codeforces.
+- Ranking dos amigos por rating e, em caso de empate, problemas resolvidos.
+- Placar separado para sessões de treino criadas no RankFlow.
 - Criação de treinos personalizados.
-- Amigos, perfis e placares de competições próprias.
-- Integração com a API pública do Codeforces.
-- Autenticação de identidade via OpenID Connect do Codeforces (em implementação).
 
 ## Tecnologias
 
 - Mobile: React Native, Expo e TypeScript.
-- Backend: Python, FastAPI e SQLAlchemy.
+- Backend: Python, FastAPI, SQLAlchemy e HTTPX.
 - Banco de dados: PostgreSQL 16.
-- Integração externa: Codeforces API e OpenID Connect.
+- Serviço externo: API pública do Codeforces.
+- Persistência local: AsyncStorage.
 - Docker Compose para execução local.
 
 ## Estrutura
@@ -39,45 +42,51 @@ RankFlow/
    ```powershell
    Copy-Item backend/.env.example backend/.env
    ```
-2. Configure `JWT_SECRET` e `SESSION_SECRET` com segredos aleatórios fortes.
-3. Registre uma aplicação OpenID Connect nas configurações do Codeforces e preencha `CODEFORCES_CLIENT_ID`, `CODEFORCES_CLIENT_SECRET` e a callback URL cadastrada em `CODEFORCES_CALLBACK_URL`.
-4. Inicie os serviços:
+2. Preencha os segredos exigidos no arquivo local `backend/.env`. Não versione esse arquivo.
+3. Inicie os serviços:
    ```bash
    docker compose up --build
    ```
-5. Verifique:
+4. Verifique:
    - API: http://localhost:8000/health
    - Swagger: http://localhost:8000/docs
 
 ## Executar o aplicativo mobile
 
-Em outro terminal, na raiz do projeto:
+1. Instale as dependências na raiz:
+   ```bash
+   npm install
+   ```
+2. Configure `EXPO_PUBLIC_API_URL` com a URL acessível do backend. Para simulador no mesmo computador, use `http://localhost:8000`. Em dispositivo físico, use o IP local do computador.
+3. Inicie o Expo:
+   ```bash
+   npx expo start
+   ```
 
-```bash
-npm ci
-npm start
-```
+## Integração Codeforces
 
-A integração de login mobile, callback deep link e armazenamento seguro da sessão ainda precisa ser concluída. O backend desta etapa já disponibiliza o fluxo OIDC e a troca do ticket por JWT.
+O aplicativo chama o backend RankFlow por HTTP. O backend consulta a base `https://codeforces.com/api` usando os métodos públicos:
 
-## API inicial
+- `GET /user.info?handles={handle}`
+- `GET /user.rating?handle={handle}`
+- `GET /user.status?handle={handle}&from=1&count=1000`
 
-- `GET /api/auth/codeforces/login`
-- `GET /api/auth/codeforces/callback`
-- `POST /api/auth/codeforces/exchange`
-- `GET /api/users/me`
+Endpoints internos:
 - `GET /api/codeforces/users/{handle}`
 - `GET /api/codeforces/users/{handle}/rating`
-- `GET /api/codeforces/users/{handle}/submissions`
-- `GET /api/codeforces/problems`
+- `GET /api/codeforces/users/{handle}/submissions?count=1000`
+
+As telas Início, Estatísticas, Amigos e Placar usam esses dados. O número de problemas resolvidos é calculado a partir das até 1000 submissões mais recentes, contando problemas distintos com veredito `OK`. Portanto, o valor representa a amostra consultada, não necessariamente o total histórico completo.
+
+Na tela Amigos, o usuário cadastra handles manualmente. A lista fica persistida localmente via AsyncStorage. O ranking é ordenado por rating decrescente e, em caso de empate, por problemas resolvidos. O placar de treinos RankFlow permanece separado.
 
 ## Documentação
 
 - [Proposta do projeto](docs/proposta.md)
 - [Etapa 03 — UX e navegação](docs/etapa-03.md)
 - [Etapa 04 — Persistência local](docs/etapa-04.md)
-- [Etapa 06 — Backend e Codeforces](docs/etapa-06.md)
+- [Etapa 06 — Integração com API externa](docs/etapa-06.md)
 
 ## Estado atual
 
-A Etapa 06 está em andamento. O backend inicial, o banco PostgreSQL, os endpoints de consulta Codeforces e o fluxo OIDC foram adicionados. A integração mobile completa e a substituição dos mocks nas telas ainda estão pendentes.
+A integração de consulta Codeforces está implementada no backend e conectada às telas principais. O fluxo de autenticação OIDC e a integração mobile completa ainda dependem de configuração e finalização próprias. A lista de amigos é local ao dispositivo nesta versão.
