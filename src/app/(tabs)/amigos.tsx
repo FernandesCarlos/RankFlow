@@ -129,7 +129,7 @@ export default function AmigosScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.handle}>{friend.handle}</Text>
                 <Text style={styles.rank}>{friend.user.rank ?? 'Unrated'} · {friend.user.rating ?? '—'} rating</Text>
-                <Text style={styles.stats}>{friend.solvedCount} problemas resolvidos · {friend.contestCount} contests</Text>
+                <Text style={styles.stats}>{friend.solvedCount} problemas resolvidos</Text>
               </View>
             </Card>
           </Pressable>
