@@ -56,7 +56,7 @@ export default function EstatisticasScreen() {
           <Card style={styles.summaryCard}>
             <Text style={styles.label}>Problemas resolvidos</Text>
             <Text style={styles.value}>{data.solvedCount}</Text>
-            <Text style={styles.caption}>Na amostra recente de até 1000 submissões</Text>
+            <Text style={styles.caption}>Em todo o histórico público de submissões</Text>
           </Card>
           <Card style={styles.summaryCard}>
             <Text style={styles.label}>Contests</Text>
