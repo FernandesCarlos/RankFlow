@@ -6,10 +6,12 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta, timezone
+import uuid
 
 from app.core import settings
 from app.database import Base, engine, get_db
-from app.models import User
+from app.models import User, TrainingSession, TrainingSubmission
 from app import codeforces
 from app.auth import router as auth_router
 
@@ -165,3 +167,132 @@ async def codeforces_training(
 @app.get("/api/codeforces/users/{handle}/verification-problem")
 async def codeforces_verification_problem(handle: str):
     return await codeforces.generate_training(handle, 1, 800, 1200, [])
+
+
+
+def _session_payload(session: TrainingSession, db: Session):
+    now = datetime.now(timezone.utc)
+    ends_at = session.ends_at if session.ends_at.tzinfo else session.ends_at.replace(tzinfo=timezone.utc)
+    started_at = session.started_at if session.started_at.tzinfo else session.started_at.replace(tzinfo=timezone.utc)
+    status = "finished" if now >= ends_at else session.status
+    if status != session.status:
+        session.status = status
+        db.commit()
+    submissions = db.query(TrainingSubmission).filter_by(session_id=session.id).order_by(TrainingSubmission.submitted_at.asc()).all()
+    return {
+        "id": session.id,
+        "title": session.title,
+        "creatorHandle": session.creator_handle,
+        "participants": session.participants,
+        "problems": session.problems,
+        "durationMinutes": session.duration_minutes,
+        "startedAt": started_at.isoformat(),
+        "endsAt": ends_at.isoformat(),
+        "status": status,
+        "serverNow": now.isoformat(),
+        "submissions": [{
+            "id": item.id,
+            "participant": item.participant,
+            "problemId": item.problem_id,
+            "verdict": item.verdict,
+            "points": item.points,
+            "submittedAt": item.submitted_at.isoformat() if item.submitted_at else None,
+        } for item in submissions],
+    }
+
+
+@app.post("/api/trainings")
+def create_training_session(payload: dict, db: Session = Depends(get_db)):
+    creator = str(payload.get("creatorHandle", "")).strip()
+    participants = list(dict.fromkeys(str(x).strip() for x in payload.get("participants", []) if str(x).strip()))
+    problems = payload.get("problems", [])
+    duration = payload.get("durationMinutes", 60)
+    if not creator or creator not in participants:
+        raise HTTPException(422, "O criador precisa estar entre os participantes.")
+    if not isinstance(problems, list) or not problems:
+        raise HTTPException(422, "O treino precisa ter problemas.")
+    if len(participants) > 30 or len(problems) > 20:
+        raise HTTPException(422, "Limite de participantes ou problemas excedido.")
+    if not isinstance(duration, int) or not 5 <= duration <= 360:
+        raise HTTPException(422, "A duração deve estar entre 5 e 360 minutos.")
+    now = datetime.now(timezone.utc)
+    session = TrainingSession(
+        id=str(uuid.uuid4()),
+        title=str(payload.get("title") or "Treino RankFlow")[:160],
+        creator_handle=creator,
+        participants=participants,
+        problems=problems,
+        duration_minutes=duration,
+        started_at=now,
+        ends_at=now + timedelta(minutes=duration),
+        status="active",
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return _session_payload(session, db)
+
+
+@app.get("/api/trainings/{session_id}")
+def get_training_session(session_id: str, db: Session = Depends(get_db)):
+    session = db.get(TrainingSession, session_id)
+    if not session:
+        raise HTTPException(404, "Treino não encontrado.")
+    return _session_payload(session, db)
+
+
+@app.post("/api/trainings/{session_id}/submissions")
+def submit_training_attempt(session_id: str, payload: dict, db: Session = Depends(get_db)):
+    session = db.get(TrainingSession, session_id)
+    if not session:
+        raise HTTPException(404, "Treino não encontrado.")
+    now = datetime.now(timezone.utc)
+    ends_at = session.ends_at if session.ends_at.tzinfo else session.ends_at.replace(tzinfo=timezone.utc)
+    if session.status != "active" or now >= ends_at:
+        session.status = "finished"
+        db.commit()
+        raise HTTPException(409, "O tempo deste treino terminou.")
+    participant = str(payload.get("participant", "")).strip()
+    problem_id = str(payload.get("problemId", "")).strip()
+    verdict = str(payload.get("verdict", "")).upper()
+    if participant not in session.participants:
+        raise HTTPException(403, "Participante não faz parte deste treino.")
+    problem = next((p for p in session.problems if str(p.get("id")) == problem_id), None)
+    if not problem:
+        raise HTTPException(404, "Problema não pertence a este treino.")
+    if verdict not in {"OK", "WRONG_ANSWER", "TIME_LIMIT_EXCEEDED", "RUNTIME_ERROR"}:
+        raise HTTPException(422, "Resultado de simulação inválido.")
+    already_solved = db.query(TrainingSubmission).filter_by(
+        session_id=session.id, participant=participant, problem_id=problem_id, verdict="OK"
+    ).first()
+    if already_solved:
+        raise HTTPException(409, "Este participante já pontuou neste problema.")
+    points = (100 + int(problem.get("rating") or 0) // 10) if verdict == "OK" else 0
+    submission = TrainingSubmission(
+        id=str(uuid.uuid4()), session_id=session.id, participant=participant,
+        problem_id=problem_id, verdict=verdict, points=points, submitted_at=now,
+    )
+    db.add(submission)
+    db.commit()
+    return _session_payload(session, db)
+
+
+@app.get("/api/trainings/{session_id}/scoreboard")
+def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
+    session = db.get(TrainingSession, session_id)
+    if not session:
+        raise HTTPException(404, "Treino não encontrado.")
+    payload = _session_payload(session, db)
+    rows = []
+    for handle in session.participants:
+        attempts = [s for s in payload["submissions"] if s["participant"] == handle]
+        solved = {s["problemId"] for s in attempts if s["verdict"] == "OK"}
+        rows.append({
+            "participant": handle,
+            "solved": len(solved),
+            "points": sum(s["points"] for s in attempts),
+            "attempts": len(attempts),
+            "lastSubmissionAt": attempts[-1]["submittedAt"] if attempts else None,
+        })
+    rows.sort(key=lambda row: (-row["points"], -row["solved"], row["attempts"]))
+    return {**payload, "ranking": rows}
