@@ -35,4 +35,5 @@ export type Training = {
   problems: TrainingProblem[];
   durationMinutes?: number;
   sessionId?: string;
+  startAt?: string;
 };
