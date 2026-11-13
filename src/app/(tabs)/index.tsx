@@ -16,6 +16,12 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let active = true;
+    if (!profile.codeforcesHandle.trim()) {
+      setData(null);
+      setError('Vincule seu handle do Codeforces nas configurações de plataformas.');
+      setLoading(false);
+      return () => { active = false; };
+    }
     setLoading(true);
     getCodeforcesSummary(profile.codeforcesHandle)
       .then((result) => { if (active) { setData(result); setError(''); } })
