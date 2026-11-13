@@ -57,7 +57,7 @@ export default function HistoricoScreen() {
           <Card>
             <Text style={{ color: colors.muted }}>
               Nenhum treino concluído. Acesse a aba Treino, gere uma
-              lista e conclua um treino para visualizar os resultados aqui.
+              lista e salve o treino para visualizar os problemas aqui.
             </Text>
           </Card>
         ) : (
