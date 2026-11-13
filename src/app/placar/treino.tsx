@@ -30,7 +30,7 @@ export default function TrainingScoreboardScreen() {
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => {
     if (!sessionId) return;
-    const poll = setInterval(refresh, 5000);
+    const poll = setInterval(refresh, 20000);
     return () => clearInterval(poll);
   }, [sessionId, refresh]);
 
@@ -46,13 +46,13 @@ export default function TrainingScoreboardScreen() {
         </View>
       </View>
       <Text style={{ color: colors.text, fontSize: 23, fontWeight: '800' }}>{scoreboard?.title ?? 'Competição RankFlow'}</Text>
-      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 5, marginBottom: 14 }}>Pontuação simulada das tentativas realizadas durante esta sessão.</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 5, marginBottom: 14 }}>Pontuação baseada nas submissões públicas do Codeforces durante o treino, incluindo Accepted. Atualize manualmente para consultar os dados mais recentes.</Text>
       {!sessionId ? <InfoBox>Crie um treino com cronômetro para acompanhar uma competição aqui. Os resultados antigos salvos localmente não representam uma sessão ao vivo.</InfoBox> : null}
       {loading ? <InfoBox>Atualizando placar…</InfoBox> : null}
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       {scoreboard ? <>
         <Card>
-          <Text style={{ color: colors.text, fontWeight: '800' }}>Status: {scoreboard.status === 'active' ? 'Em andamento' : 'Encerrado'}</Text>
+          <Text style={{ color: colors.text, fontWeight: '800' }}>Status: {scoreboard.status === 'scheduled' ? 'Agendado' : scoreboard.status === 'active' ? 'Em andamento' : 'Encerrado'}</Text>
           <Text style={{ color: colors.muted, fontSize: 12, marginTop: 5 }}>Início: {new Date(scoreboard.startedAt).toLocaleString('pt-BR')}</Text>
           <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Duração: {scoreboard.durationMinutes} minutos</Text>
         </Card>
