@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Platform,
@@ -18,9 +18,31 @@ import {
 import { goBack } from '../../navigation/actions';
 import { useApp } from '../../state/AppContext';
 import { colors } from '../../theme/colors';
+import { getTrainingSession, type TrainingSession } from '../../services/codeforcesApi';
 
 export default function HistoricoScreen() {
-  const { trainingHistory, deleteTraining } = useApp();
+  const { training, trainingHistory, deleteTraining } = useApp();
+  const [activeSession, setActiveSession] = useState<TrainingSession | null>(null);
+  const refreshActive = useCallback(async () => {
+    if (!training?.sessionId) {
+      setActiveSession(null);
+      return;
+    }
+    try {
+      setActiveSession(await getTrainingSession(training.sessionId));
+    } catch {
+      setActiveSession(null);
+    }
+  }, [training?.sessionId]);
+  useEffect(() => { refreshActive(); }, [refreshActive]);
+  useEffect(() => {
+    if (!training?.sessionId) return;
+    const timer = setInterval(refreshActive, 10000);
+    return () => clearInterval(timer);
+  }, [training?.sessionId, refreshActive]);
+  const savedHistory = training?.sessionId
+    ? trainingHistory.filter((item) => item.sessionId !== training.sessionId)
+    : trainingHistory;
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
     null,
@@ -59,7 +81,7 @@ export default function HistoricoScreen() {
             </Text>
           </Card>
         ) : (
-          trainingHistory.map((item) => (
+          savedHistory.map((item) => (
             <View key={item.id} style={{ marginBottom: 12 }}>
               <Card>
                 <AccessiblePressable
