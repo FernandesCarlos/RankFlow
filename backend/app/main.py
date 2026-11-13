@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
+from sqlalchemy import text
 import uuid
 
 from app.core import settings
@@ -17,6 +18,12 @@ from app.auth import router as auth_router
 
 cfg = settings()
 Base.metadata.create_all(bind=engine)
+# Atualiza bancos existentes; create_all não altera tabelas já criadas.
+with engine.begin() as connection:
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(254)"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(256)"))
+    connection.execute(text("ALTER TABLE users ALTER COLUMN codeforces_handle DROP NOT NULL"))
+    connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
 
 app = FastAPI(title="RankFlow API", version="0.6.0")
 app.add_middleware(
@@ -65,6 +72,8 @@ def health():
 def me(user: User = Depends(current_user)):
     return {
         "id": user.id,
+        "email": user.email,
+        "display_name": user.display_name,
         "codeforces_handle": user.codeforces_handle,
         "display_name": user.display_name,
         "avatar_url": user.avatar_url,
@@ -174,7 +183,12 @@ def _session_payload(session: TrainingSession, db: Session):
     now = datetime.now(timezone.utc)
     ends_at = session.ends_at if session.ends_at.tzinfo else session.ends_at.replace(tzinfo=timezone.utc)
     started_at = session.started_at if session.started_at.tzinfo else session.started_at.replace(tzinfo=timezone.utc)
-    status = "finished" if now >= ends_at else session.status
+    if now < started_at:
+        status = "scheduled"
+    elif now >= ends_at:
+        status = "finished"
+    else:
+        status = "active"
     if status != session.status:
         session.status = status
         db.commit()
@@ -216,6 +230,21 @@ def create_training_session(payload: dict, db: Session = Depends(get_db)):
     if not isinstance(duration, int) or not 5 <= duration <= 360:
         raise HTTPException(422, "A duração deve estar entre 5 e 360 minutos.")
     now = datetime.now(timezone.utc)
+    raw_start = payload.get("startAt")
+    if raw_start:
+        try:
+            starts_at = datetime.fromisoformat(str(raw_start).replace("Z", "+00:00"))
+            if starts_at.tzinfo is None:
+                starts_at = starts_at.replace(tzinfo=timezone.utc)
+            starts_at = starts_at.astimezone(timezone.utc)
+        except ValueError:
+            raise HTTPException(422, "Data e horário de início inválidos.")
+    else:
+        starts_at = now
+    if starts_at < now - timedelta(minutes=1):
+        raise HTTPException(422, "O início do treino não pode estar no passado.")
+    if starts_at > now + timedelta(days=90):
+        raise HTTPException(422, "O treino só pode ser agendado para os próximos 90 dias.")
     session = TrainingSession(
         id=str(uuid.uuid4()),
         title=str(payload.get("title") or "Treino RankFlow")[:160],
@@ -223,9 +252,9 @@ def create_training_session(payload: dict, db: Session = Depends(get_db)):
         participants=participants,
         problems=problems,
         duration_minutes=duration,
-        started_at=now,
-        ends_at=now + timedelta(minutes=duration),
-        status="active",
+        started_at=starts_at,
+        ends_at=starts_at + timedelta(minutes=duration),
+        status="scheduled" if starts_at > now else "active",
     )
     db.add(session)
     db.commit()
@@ -248,7 +277,10 @@ def submit_training_attempt(session_id: str, payload: dict, db: Session = Depend
         raise HTTPException(404, "Treino não encontrado.")
     now = datetime.now(timezone.utc)
     ends_at = session.ends_at if session.ends_at.tzinfo else session.ends_at.replace(tzinfo=timezone.utc)
-    if session.status != "active" or now >= ends_at:
+    started_at = session.started_at if session.started_at.tzinfo else session.started_at.replace(tzinfo=timezone.utc)
+    if now < started_at:
+        raise HTTPException(409, "Este treino ainda não começou.")
+    if session.status == "finished" or now >= ends_at:
         session.status = "finished"
         db.commit()
         raise HTTPException(409, "O tempo deste treino terminou.")
