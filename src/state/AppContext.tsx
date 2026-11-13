@@ -137,10 +137,7 @@ function useAppState() {
       ...training,
       id,
       completedAt: new Date().toISOString(),
-      results: training.participants.map((participant, index) => {
-        const solved = Math.max(0, training.problems.length - index);
-        return { participant, solved, points: solved * 100 };
-      }),
+      results: [],
     };
     setTrainingHistory(current => [completed, ...current]);
     setCompletedTrainingId(id);
