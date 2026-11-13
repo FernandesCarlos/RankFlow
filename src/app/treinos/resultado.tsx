@@ -21,14 +21,14 @@ function formatElapsed(seconds: number | null | undefined) {
   const minutes = Math.floor((seconds % 3600) / 60);
   const rest = seconds % 60;
   return hours > 0
-    ? \`\${String(hours).padStart(2, '0')}:\${String(minutes).padStart(2, '0')}:\${String(rest).padStart(2, '0')}\`
-    : \`\${String(minutes).padStart(2, '0')}:\${String(rest).padStart(2, '0')}\`;
+    ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
+    : `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
 }
 
 function formatPenalty(seconds: number) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  return hours > 0 ? \`\${hours}h \${minutes}min\` : \`\${minutes}min\`;
+  return hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
 }
 
 export default function ResultadoScreen() {
@@ -83,7 +83,7 @@ export default function ResultadoScreen() {
       const seconds = Math.max(0, Math.floor((new Date(target).getTime() - Date.now()) / 1000));
       const minutes = Math.floor(seconds / 60);
       const rest = seconds % 60;
-      setRemaining(\`\${String(minutes).padStart(2, '0')}:\${String(rest).padStart(2, '0')}\`);
+      setRemaining(`${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`);
       if (seconds === 0 && session.status !== 'finished') refreshSession();
     }, 1000);
     return () => clearInterval(timer);
@@ -141,7 +141,7 @@ export default function ResultadoScreen() {
                     <AccessiblePressable
                       key={problem.id}
                       accessibilityRole="link"
-                      accessibilityLabel={\`Abrir problema \${problem.label}: \${problem.title} no Codeforces\`}
+                      accessibilityLabel={`Abrir problema ${problem.label}: ${problem.title} no Codeforces`}
                       onPress={() => Linking.openURL(problem.url)}
                       style={{ width: 112, minHeight: 48, justifyContent: 'center', paddingHorizontal: 5, alignItems: 'center' }}
                     >
@@ -167,7 +167,7 @@ export default function ResultadoScreen() {
                       const pending = status === 'pending';
                       const background = accepted ? '#DCFCE7' : failed ? '#FEE2E2' : pending ? '#FEF3C7' : '#F1F5F9';
                       const foreground = accepted ? '#166534' : failed ? '#991B1B' : pending ? '#92400E' : colors.muted;
-                      const label = accepted ? 'AC' : failed ? \`ERR ×\${result?.wrongAttempts ?? 0}\` : pending ? '...' : '—';
+                      const label = accepted ? 'AC' : failed ? `ERR ×${result?.wrongAttempts ?? 0}` : pending ? '...' : '—';
                       return (
                         <View key={problem.id} style={{ width: 112, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 }}>
                           <View style={{ backgroundColor: background, borderRadius: 999, minWidth: 48, paddingVertical: 5, paddingHorizontal: 8, alignItems: 'center' }}>
