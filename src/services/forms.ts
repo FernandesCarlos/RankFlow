@@ -10,7 +10,7 @@ export function validateProfile(input: { name: string; username: string; email: 
 export function validateRegistration(input: { name: string; email: string; password: string; confirmation: string }) {
   const error = validateProfile({ ...input, username: input.name });
   if (error) return error;
-  if (input.password.length < 6) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (input.password.length < 8) return 'A senha precisa ter pelo menos 8 caracteres.';
   if (input.password !== input.confirmation) return 'As senhas não coincidem.';
   return '';
 }
