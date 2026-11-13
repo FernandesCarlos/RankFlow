@@ -1,4 +1,7 @@
-import { mockCodeforces } from '../mocks';
+import {
+  checkCodeforcesVerificationSubmission,
+  getCodeforcesUser,
+} from './codeforcesApi';
 
 export type CodeforcesProfile = {
   handle: string;
@@ -8,30 +11,32 @@ export type CodeforcesProfile = {
   memberSince: number;
 };
 
-const sleep = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
 export async function findCodeforcesUser(
-  handle: string
+  handle: string,
 ): Promise<CodeforcesProfile | null> {
-  await sleep(650);
-
   const normalizedHandle = handle.trim();
+  if (!normalizedHandle) return null;
 
-  if (
-    !normalizedHandle ||
-    normalizedHandle.toLowerCase() === mockCodeforces.invalidHandle
-  ) {
-    return null;
-  }
-
+  const user = await getCodeforcesUser(normalizedHandle);
   return {
-    ...mockCodeforces.profile,
-    handle: normalizedHandle,
+    handle: user.handle,
+    rating: user.rating ?? 0,
+    rank: user.rank ?? 'Unrated',
+    ranking: user.rank ?? 'Unrated',
+    memberSince: user.registrationTimeSeconds ?? 0,
   };
 }
 
-export async function checkVerificationSubmission() {
-  await sleep(750);
-  return mockCodeforces.verificationSubmissionFound;
+export async function checkVerificationSubmission(input: {
+  handle: string;
+  contestId: number;
+  index: string;
+  startedAt: number;
+}) {
+  return checkCodeforcesVerificationSubmission(
+    input.handle,
+    input.contestId,
+    input.index,
+    input.startedAt,
+  );
 }
