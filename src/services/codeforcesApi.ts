@@ -123,3 +123,39 @@ export function getCodeforcesRank(user: CodeforcesUser): string {
   if (typeof user.rating === 'number') return 'Unrated';
   return 'Sem rating';
 }
+
+
+export async function getCodeforcesVerificationProblem(handle: string): Promise<CodeforcesProblem> {
+  const result = await request<{ problems: CodeforcesProblem[] }>(
+    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/verification-problem`
+  );
+  const problem = result.problems?.[0];
+  if (!problem) throw new Error('Não foi possível encontrar um problema para a verificação.');
+  return problem;
+}
+
+export async function checkCodeforcesVerificationSubmission(
+  handle: string,
+  contestId: number,
+  index: string,
+  startedAt: number,
+): Promise<boolean> {
+  const submissions = await request<{
+    id: number;
+    contestId?: number;
+    creationTimeSeconds: number;
+    verdict?: string;
+    problem: { contestId?: number; index: string };
+  }[]>(
+    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/submissions?count=1000`
+  );
+  return submissions.some((submission) => {
+    const submittedContestId = submission.problem?.contestId ?? submission.contestId;
+    return (
+      submittedContestId === contestId &&
+      submission.problem?.index === index &&
+      submission.verdict === 'OK' &&
+      submission.creationTimeSeconds >= startedAt
+    );
+  });
+}
