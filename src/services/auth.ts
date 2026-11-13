@@ -60,7 +60,8 @@ export async function getCurrentUser(token: string): Promise<AuthUser> {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'Sessão expirada.');
+    if (response.status === 401) throw new Error('SESSION_INVALID');
+    throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'Não foi possível validar a sessão agora.');
   }
   return payload as AuthUser;
 }
