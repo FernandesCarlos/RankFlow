@@ -99,7 +99,7 @@ export default function VerificarContaScreen() {
       <Card>
         <Step icon="1" text="Consultamos seu perfil público no Codeforces." />
         <Step icon="2" text="Selecionamos um problema real ainda não resolvido pelo seu handle." />
-        <Step icon="3" text="Você envia uma solução aceita; o RankFlow verifica a submissão pública." last />
+        <Step icon="3" text="Você envia qualquer tentativa; o RankFlow verifica a submissão pública, mesmo que não seja Accepted." last />
       </Card>
 
       {loading ? <LoadingSkeleton label="Consultando usuário no Codeforces" /> : null}
