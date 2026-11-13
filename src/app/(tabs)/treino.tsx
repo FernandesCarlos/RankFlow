@@ -6,6 +6,7 @@ import {
   Card,
   Field,
   InfoBox,
+  OutlineButton,
   PrimaryButton,
   Screen,
   SectionTitle,
@@ -18,6 +19,7 @@ import {
   generateCodeforcesTraining,
   getCodeforcesProblemTags,
   createTrainingSession,
+  searchCodeforcesProblems,
 } from '../../services/codeforcesApi';
 
 export default function TreinoScreen() {
@@ -29,6 +31,14 @@ export default function TreinoScreen() {
   const [min, setMin] = useState('1000');
   const [max, setMax] = useState('1500');
   const [duration, setDuration] = useState('60');
+  const initialStart = new Date(Date.now() + 5 * 60 * 1000);
+  const [startDate, setStartDate] = useState(initialStart.toISOString().slice(0, 10));
+  const [startTime, setStartTime] = useState(`${String(initialStart.getHours()).padStart(2, '0')}:${String(initialStart.getMinutes()).padStart(2, '0')}`);
+  const [problemMode, setProblemMode] = useState<'random' | 'manual'>('random');
+  const [problemQuery, setProblemQuery] = useState('');
+  const [problemResults, setProblemResults] = useState<Awaited<ReturnType<typeof searchCodeforcesProblems>>>([]);
+  const [selectedProblems, setSelectedProblems] = useState<Awaited<ReturnType<typeof searchCodeforcesProblems>>>([]);
+  const [searchingProblems, setSearchingProblems] = useState(false);
   const [loadingTags, setLoadingTags] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -71,6 +81,28 @@ export default function TreinoScreen() {
     setter(current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   }
 
+  async function findProblems() {
+    if (!problemQuery.trim()) {
+      setError('Digite o nome ou código de um problema para pesquisar.');
+      return;
+    }
+    setSearchingProblems(true);
+    setError('');
+    try {
+      setProblemResults(await searchCodeforcesProblems(problemQuery));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível pesquisar os problemas.');
+    } finally {
+      setSearchingProblems(false);
+    }
+  }
+
+  function toggleProblem(problem: (typeof selectedProblems)[number]) {
+    setSelectedProblems((current) => current.some((item) => item.id === problem.id)
+      ? current.filter((item) => item.id !== problem.id)
+      : [...current, problem]);
+  }
+
   async function generate() {
     const minRating = Number(min);
     const maxRating = Number(max);
@@ -97,27 +129,45 @@ export default function TreinoScreen() {
       return;
     }
 
+    const localStart = new Date(`${startDate}T${startTime}:00`);
+    if (!startDate || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(startTime) || Number.isNaN(localStart.getTime())) {
+      setError('Informe uma data e um horário de início válidos.');
+      return;
+    }
+    if (localStart.getTime() < Date.now() - 60000) {
+      setError('O início do treino não pode estar no passado.');
+      return;
+    }
+    if (problemMode === 'manual' && selectedProblems.length !== quantity) {
+      setError(`Selecione exatamente ${quantity} problemas ou altere a quantidade.`);
+      return;
+    }
+
     setGenerating(true);
     setError('');
     try {
-      const result = await generateCodeforcesTraining({
-        handle: profile.codeforcesHandle,
-        quantity,
-        min: minRating,
-        max: maxRating,
-        tags,
-      });
+      const result = problemMode === 'random'
+        ? await generateCodeforcesTraining({
+            handle: profile.codeforcesHandle,
+            quantity,
+            min: minRating,
+            max: maxRating,
+            tags,
+          })
+        : { quantity, min: minRating, max: maxRating, tags, problems: selectedProblems };
       const session = await createTrainingSession({
         creatorHandle: profile.codeforcesHandle,
         participants,
         problems: result.problems,
         durationMinutes,
+        startAt: localStart.toISOString(),
       });
       setTraining({
         ...result,
         participants,
         durationMinutes,
         sessionId: session.id,
+        startAt: session.startedAt,
       });
       router.push('/treinos/resultado');
     } catch (err) {
@@ -174,6 +224,39 @@ export default function TreinoScreen() {
             />
           ))}
         </View>
+      </Card>
+
+      <SectionTitle>Início do treino</SectionTitle>
+      <Card>
+        <Field label="Dia (AAAA-MM-DD)" value={startDate} onChangeText={setStartDate} placeholder="2026-11-15" />
+        <Field label="Horário (24 horas)" value={startTime} onChangeText={setStartTime} placeholder="19:30" />
+        <Text style={styles.description}>Você pode iniciar imediatamente escolhendo o horário atual ou agendar para uma data futura. O servidor controla o início e o encerramento.</Text>
+      </Card>
+
+      <SectionTitle>Escolha dos problemas</SectionTitle>
+      <Card>
+        <View style={styles.row}>
+          <Choice label="Aleatórios" selected={problemMode === 'random'} single onPress={() => setProblemMode('random')} />
+          <Choice label="Escolher por nome ou código" selected={problemMode === 'manual'} single onPress={() => setProblemMode('manual')} />
+        </View>
+        {problemMode === 'manual' ? <>
+          <Field label="Nome ou código (ex.: 4A ou 4A Watermelon)" value={problemQuery} onChangeText={setProblemQuery} placeholder="Pesquisar no Codeforces" />
+          <OutlineButton title={searchingProblems ? 'Pesquisando…' : 'Pesquisar problema'} onPress={findProblems} disabled={searchingProblems || !problemQuery.trim()} />
+          <Text style={styles.description}>Selecionados: {selectedProblems.length} de {quantity}</Text>
+          <View style={styles.row}>
+            {problemResults.map((problem) => (
+              <Choice
+                key={problem.id}
+                label={`${problem.id} · ${problem.title}`}
+                selected={selectedProblems.some((item) => item.id === problem.id)}
+                onPress={() => toggleProblem(problem)}
+              />
+            ))}
+          </View>
+          {selectedProblems.map((problem) => (
+            <Text key={problem.id} style={styles.hint}>✓ {problem.id} — {problem.title}</Text>
+          ))}
+        </> : <Text style={styles.description}>O RankFlow selecionará problemas aleatórios conforme a faixa de dificuldade e as tags escolhidas.</Text>}
       </Card>
 
       <SectionTitle>Duração do treino</SectionTitle>
