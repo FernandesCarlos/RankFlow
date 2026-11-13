@@ -115,7 +115,7 @@ A lista de handles de amigos é salva em AsyncStorage no estado `@rankflow:app-s
    docker compose up --build
    ```
 4. Verifique `http://localhost:8000/health` e a documentação interativa em `http://localhost:8000/docs`.
-5. Configure a URL que o aplicativo consegue alcançar por meio de `EXPO_PUBLIC_API_URL`. Exemplo para execução no mesmo computador: `http://localhost:8000`. Em dispositivo físico, use o IP local do computador na rede.
+5. Copie `.env.example` para `.env` na raiz do projeto e configure `EXPO_PUBLIC_API_URL`. Exemplo para execução no mesmo computador: `http://localhost:8000`. Em dispositivo físico, use o IP local do computador na rede.
 6. Inicie o aplicativo:
    ```bash
    npm install
