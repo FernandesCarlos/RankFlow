@@ -20,7 +20,7 @@ export default function EstatisticasScreen() {
     setLoading(true);
     getCodeforcesSummary(profile.codeforcesHandle)
       .then((result) => { if (active) { setData(result); setError(''); } })
-      .catch((err) => { if (active) setError(err instanceof Error ? err.message : 'Não foi possível carregar as estatísticas.'); })
+      .catch((err) => { if (active) { setData(null); setError(err instanceof Error ? err.message : 'Não foi possível carregar as estatísticas.'); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [profile.codeforcesHandle]);
