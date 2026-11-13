@@ -46,11 +46,12 @@ export default function ResultadoScreen() {
   useEffect(() => {
     const timer = setInterval(() => {
       if (!session) return;
-      const seconds = Math.max(0, Math.floor((new Date(session.endsAt).getTime() - Date.now()) / 1000));
+      const target = session.status === 'scheduled' ? session.startedAt : session.endsAt;
+      const seconds = Math.max(0, Math.floor((new Date(target).getTime() - Date.now()) / 1000));
       const minutes = Math.floor(seconds / 60);
       const rest = seconds % 60;
       setRemaining(`${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`);
-      if (seconds === 0 && session.status === 'active') refreshSession();
+      if (seconds === 0 && session.status !== 'finished') refreshSession();
     }, 1000);
     return () => clearInterval(timer);
   }, [session, refreshSession]);
@@ -73,7 +74,7 @@ export default function ResultadoScreen() {
 
   return (
     <Screen>
-      <Header title={completed ? 'Treino salvo' : 'Competição em andamento'} onBack={() => goBack('/(tabs)/treino')} />
+      <Header title={completed ? 'Treino salvo' : session?.status === 'scheduled' ? 'Treino agendado' : session?.status === 'finished' ? 'Treino encerrado' : 'Competição em andamento'} onBack={() => goBack('/(tabs)/treino')} />
       {!training ? <>
         <InfoBox>Não há treino nesta sessão. Escolha os filtros para gerar uma lista de problemas reais.</InfoBox>
         <PrimaryButton title="Criar treino" onPress={() => router.replace('/(tabs)/treino')} />
@@ -84,9 +85,10 @@ export default function ResultadoScreen() {
           <Text style={{ color: colors.text, fontSize: 14, marginTop: 8 }}>Dificuldade: {training.min} a {training.max}</Text>
           <Text style={{ color: colors.text, fontSize: 14, marginTop: 8 }}>Tags: {training.tags.length ? training.tags.join(', ') : 'Todas'}</Text>
           {session ? <>
-            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 12 }}>TEMPO RESTANTE</Text>
-            <Text style={{ color: session.status === 'active' ? colors.primary : colors.danger, fontSize: 32, fontWeight: '900', marginTop: 3 }}>{session.status === 'active' ? remaining : 'ENCERRADO'}</Text>
-            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>Duração: {session.durationMinutes} minutos · O cronômetro é validado pelo servidor.</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 12 }}>{session.status === 'scheduled' ? 'INÍCIO EM' : 'TEMPO RESTANTE'}</Text>
+            <Text style={{ color: session.status === 'finished' ? colors.danger : colors.primary, fontSize: 32, fontWeight: '900', marginTop: 3 }}>{session.status === 'finished' ? 'ENCERRADO' : remaining}</Text>
+            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>Status: {session.status === 'scheduled' ? 'Agendado' : session.status === 'active' ? 'Em andamento' : 'Concluído'} · Duração: {session.durationMinutes} minutos.</Text>
+            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>Início previsto: {new Date(session.startedAt).toLocaleString('pt-BR')}</Text>
           </> : training.sessionId ? <Text style={{ color: colors.muted, marginTop: 8 }}>Carregando cronômetro…</Text> : null}
         </Card>
 
@@ -131,7 +133,7 @@ export default function ResultadoScreen() {
 
         {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
         {session ? <PrimaryButton title="Ver placar desta competição" onPress={() => router.push({ pathname: '/placar/treino', params: { sessionId: session.id } })} /> : null}
-        {!completed && !id ? <OutlineButton title="Salvar treino no histórico" onPress={completeTraining} /> : null}
+        {!completed && !id && session?.status === 'finished' ? <OutlineButton title="Salvar treino concluído no histórico" onPress={completeTraining} /> : null}
         <OutlineButton title="Atualizar competição" onPress={refreshSession} />
         <PrimaryButton title="Voltar ao início" onPress={() => router.dismissTo('/(tabs)')} />
       </>}
