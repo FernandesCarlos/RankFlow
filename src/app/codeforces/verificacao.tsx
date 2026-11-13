@@ -82,7 +82,7 @@ export default function VerificacaoScreen() {
         active.current = false;
         router.replace({ pathname: '/codeforces/sucesso', params });
       } else {
-        setError('Ainda não encontramos uma submissão aceita para este problema após o início do desafio. Envie a solução e tente novamente.');
+        setError('Ainda não encontramos uma submissão para este problema após o início do desafio. Envie qualquer tentativa e tente novamente.');
       }
     } catch (err) {
       if (active.current) setError(err instanceof Error ? err.message : 'Falha ao consultar as submissões do Codeforces.');
@@ -103,7 +103,7 @@ export default function VerificacaoScreen() {
   return (
     <Screen>
       <Header title="Verificação em andamento" onBack={() => goBack(origin)} />
-      <Text style={styles.subtitle}>Resolva o problema indicado e envie uma submissão aceita antes do tempo acabar.</Text>
+      <Text style={styles.subtitle}>Envie uma submissão para o problema indicado antes do tempo acabar. Não precisa ser Accepted.</Text>
       <Card style={styles.timerCard}>
         <Text style={styles.timerLabel}>Tempo restante</Text>
         <Text style={styles.timer}>{formatted}</Text>
@@ -116,11 +116,11 @@ export default function VerificacaoScreen() {
         <ChallengeRow label="Handle" value={params.handle} />
         <ChallengeRow label="Problema" value={`${params.contestId}${params.index} · ${params.problem}`} />
         <ChallengeRow label="Linguagem escolhida" value={params.language ?? 'Não informada'} />
-        <InfoBox>O RankFlow consulta o histórico público do Codeforces e procura uma submissão com verdict OK para este problema, enviada depois do início do desafio.</InfoBox>
+        <InfoBox>O RankFlow consulta o histórico público do Codeforces e procura qualquer submissão deste problema enviada depois do início do desafio, independentemente do veredito.</InfoBox>
       </Card>
       <Card>
-        <Text style={styles.waiting}>Aguardando submissão aceita</Text>
-        <Text style={styles.waitingText}>Depois de enviar sua solução, atualize o status para consultar a API do Codeforces.</Text>
+        <Text style={styles.waiting}>Aguardando submissão</Text>
+        <Text style={styles.waitingText}>Depois de enviar qualquer tentativa, atualize o status para consultar a API do Codeforces.</Text>
         <OutlineButton title={checking ? 'Consultando Codeforces…' : 'Verificar submissão'} onPress={refresh} loading={checking} />
       </Card>
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
