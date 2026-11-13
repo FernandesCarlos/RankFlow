@@ -51,7 +51,7 @@ export default function PlacarScreen() {
 
       {loading ? <LoadingSkeleton label="Atualizando ranking com o Codeforces" /> : null}
       {error ? <InfoBox tone="warning">{error}</InfoBox> : null}
-      {!loading && ranking.length === 0 ? <InfoBox>Você ainda não tem amigos cadastrados. Acesse a aba Amigos para adicionar handles do Codeforces.</InfoBox> : null}
+      {!loading && ranking.length === 0 && friendHandles.length === 0 ? <InfoBox>Você ainda não tem amigos cadastrados. Acesse a aba Amigos para adicionar handles do Codeforces.</InfoBox> : null}
 
       {!loading ? ranking.map((friend, index) => (
         <Pressable key={friend.handle} accessibilityRole="button" accessibilityLabel={`Posição ${index + 1}, ${friend.handle}, rating ${friend.user.rating ?? 'sem rating'}, ${friend.solvedCount} problemas resolvidos`} onPress={() => router.push({ pathname: '/amigos/[handle]', params: { handle: friend.handle } })}>
