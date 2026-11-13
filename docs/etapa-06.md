@@ -35,7 +35,7 @@ O formato de sucesso da API Codeforces usa `status: "OK"` e `result`. O backend 
 | `/api/codeforces/users/{handle}/submissions?count=1000` | GET | Handle e quantidade (1–1000) | Lista de submissões |
 | `/health` | GET | — | `{"status":"ok"}` |
 
-As três consultas são feitas em paralelo pelo cliente mobile. O backend controla a cadência das chamadas à Codeforces.
+As consultas de perfil, rating e submissões são feitas em paralelo pelo cliente mobile. Para o ranking de amigos, o app consulta apenas perfil e submissões, pois o histórico de contests não é necessário para ordenar a lista. O backend controla a cadência das chamadas à Codeforces.
 
 ## Estrutura dos dados recebidos
 
