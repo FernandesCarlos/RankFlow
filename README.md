@@ -57,7 +57,7 @@ RankFlow/
    ```bash
    npm install
    ```
-2. Configure `EXPO_PUBLIC_API_URL` com a URL acessível do backend. Para simulador no mesmo computador, use `http://localhost:8000`. Em dispositivo físico, use o IP local do computador.
+2. Copie `.env.example` para `.env` na raiz e configure `EXPO_PUBLIC_API_URL` com a URL acessível do backend. Para simulador no mesmo computador, use `http://localhost:8000`. Em dispositivo físico, use o IP local do computador.
 3. Inicie o Expo:
    ```bash
    npx expo start
