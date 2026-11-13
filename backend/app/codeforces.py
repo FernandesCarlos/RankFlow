@@ -1,9 +1,16 @@
 import asyncio
+import hashlib
+import json
 import random
 import time
+from datetime import datetime, timezone
 
 import httpx
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from app.database import SessionLocal
+from app.models import CodeforcesCache
 
 BASE = "https://codeforces.com/api"
 _lock = asyncio.Lock()
@@ -12,18 +19,85 @@ _cache = {}
 _submission_cache = {}
 
 
+def _ttl(method):
+    if method == "problemset.problems":
+        return 24 * 60 * 60
+    if method == "user.rating":
+        return 60 * 60
+    if method == "user.status":
+        return 5 * 60
+    return 5 * 60
+
+
+def _cache_key(method, params):
+    raw = json.dumps([method, params or {}], sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _read_persistent_cache(key, ttl):
+    db: Session = SessionLocal()
+    try:
+        entry = db.get(CodeforcesCache, key)
+        if not entry:
+            return None
+        fetched_at = entry.fetched_at
+        if fetched_at.tzinfo is None:
+            fetched_at = fetched_at.replace(tzinfo=timezone.utc)
+        if (datetime.now(timezone.utc) - fetched_at).total_seconds() >= ttl:
+            return None
+        return entry.payload
+    except Exception:
+        return None
+    finally:
+        db.close()
+
+
+def _write_persistent_cache(key, method, payload):
+    db: Session = SessionLocal()
+    try:
+        entry = db.get(CodeforcesCache, key)
+        if entry:
+            entry.method = method
+            entry.payload = payload
+            entry.fetched_at = datetime.now(timezone.utc)
+        else:
+            db.add(CodeforcesCache(
+                cache_key=key,
+                method=method,
+                payload=payload,
+                fetched_at=datetime.now(timezone.utc),
+            ))
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 async def call(method, params=None):
     global _last
     normalized_params = params or {}
-    key = (method, tuple(sorted(normalized_params.items())))
+    key = _cache_key(method, normalized_params)
+    ttl = _ttl(method)
+
     cached = _cache.get(key)
-    if cached and time.monotonic() - cached[0] < 60:
+    if cached and time.monotonic() - cached[0] < ttl:
         return cached[1]
+
+    persistent = _read_persistent_cache(key, ttl)
+    if persistent is not None:
+        _cache[key] = (time.monotonic(), persistent)
+        return persistent
 
     async with _lock:
         cached = _cache.get(key)
-        if cached and time.monotonic() - cached[0] < 60:
+        if cached and time.monotonic() - cached[0] < ttl:
             return cached[1]
+
+        persistent = _read_persistent_cache(key, ttl)
+        if persistent is not None:
+            _cache[key] = (time.monotonic(), persistent)
+            return persistent
 
         delay = 2.05 - (time.monotonic() - _last)
         if delay > 0:
@@ -31,10 +105,7 @@ async def call(method, params=None):
 
         try:
             async with httpx.AsyncClient(timeout=30) as client:
-                response = await client.get(
-                    f"{BASE}/{method}",
-                    params=normalized_params,
-                )
+                response = await client.get(f"{BASE}/{method}", params=normalized_params)
                 response.raise_for_status()
                 data = response.json()
         except (httpx.HTTPError, ValueError):
@@ -42,14 +113,15 @@ async def call(method, params=None):
         finally:
             _last = time.monotonic()
 
-    if data.get("status") != "OK":
-        comment = data.get("comment", "Erro Codeforces")
-        status_code = 404 if "not found" in comment.lower() else 502
-        raise HTTPException(status_code, comment)
+        if data.get("status") != "OK":
+            comment = data.get("comment", "Erro Codeforces")
+            status_code = 404 if "not found" in comment.lower() else 502
+            raise HTTPException(status_code, comment)
 
-    result = data["result"]
-    _cache[key] = (time.monotonic(), result)
-    return result
+        result = data["result"]
+        _cache[key] = (time.monotonic(), result)
+        _write_persistent_cache(key, method, result)
+        return result
 
 
 async def info(handle):
@@ -64,10 +136,7 @@ async def rating(handle):
 
 
 async def status(handle, count=100):
-    return await call(
-        "user.status",
-        {"handle": handle.strip(), "from": 1, "count": count},
-    )
+    return await call("user.status", {"handle": handle.strip(), "from": 1, "count": count})
 
 
 async def problems(tags=None):
@@ -93,7 +162,6 @@ async def all_submissions(handle):
     submissions = []
     start = 1
     page_size = 1000
-
     while True:
         page = await call(
             "user.status",
@@ -111,15 +179,12 @@ async def all_submissions(handle):
 def _solved_data(submissions):
     solved = {}
     latest_submission = None
-
     for submission in submissions:
         created_at = submission.get("creationTimeSeconds")
         if created_at is not None:
             latest_submission = max(latest_submission or 0, created_at)
-
         if submission.get("verdict") != "OK":
             continue
-
         problem = submission.get("problem") or {}
         key = problem_key(problem, submission.get("contestId"))
         if key not in solved:
@@ -129,15 +194,10 @@ def _solved_data(submissions):
     for problem in solved.values():
         for tag in problem.get("tags") or []:
             tag_counts[tag] = tag_counts.get(tag, 0) + 1
-
     tag_stats = [
         {"tag": tag, "solved": count}
-        for tag, count in sorted(
-            tag_counts.items(),
-            key=lambda item: (-item[1], item[0]),
-        )
+        for tag, count in sorted(tag_counts.items(), key=lambda item: (-item[1], item[0]))
     ]
-
     return {
         "solvedCount": len(solved),
         "submissionCount": len(submissions),
@@ -154,23 +214,14 @@ async def solved_summary(handle):
 
 async def problem_tags():
     data = await problems()
-    names = {
-        tag
-        for problem in data.get("problems", [])
-        for tag in problem.get("tags", [])
-    }
-    return sorted(names)
+    return sorted({tag for problem in data.get("problems", []) for tag in problem.get("tags", [])})
 
 
 async def generate_training(handle, quantity, min_rating, max_rating, tags=None):
     if min_rating > max_rating:
         raise HTTPException(422, "A dificuldade mínima não pode superar a máxima.")
-
     selected_tags = set(tags or [])
-    problemset, submissions = await asyncio.gather(
-        problems(),
-        all_submissions(handle),
-    )
+    problemset, submissions = await asyncio.gather(problems(), all_submissions(handle))
     _, solved_keys = _solved_data(submissions)
 
     candidates = []
@@ -178,19 +229,15 @@ async def generate_training(handle, quantity, min_rating, max_rating, tags=None)
         rating_value = problem.get("rating")
         if rating_value is None or not min_rating <= rating_value <= max_rating:
             continue
-
         problem_tags = problem.get("tags") or []
         if selected_tags and not selected_tags.intersection(problem_tags):
             continue
-
         if problem_key(problem) in solved_keys:
             continue
-
         contest_id = problem.get("contestId")
         index = problem.get("index")
         if contest_id is None or not index:
             continue
-
         candidates.append({
             "id": f"{contest_id}-{index}",
             "contestId": contest_id,
@@ -198,25 +245,17 @@ async def generate_training(handle, quantity, min_rating, max_rating, tags=None)
             "title": problem.get("name", f"Problema {contest_id}{index}"),
             "rating": rating_value,
             "tags": problem_tags,
-            "tag": next(
-                (tag for tag in problem_tags if tag in selected_tags),
-                problem_tags[0] if problem_tags else "sem tag",
-            ),
+            "tag": next((tag for tag in problem_tags if tag in selected_tags), problem_tags[0] if problem_tags else "sem tag"),
             "url": f"https://codeforces.com/problemset/problem/{contest_id}/{index}",
         })
 
     if len(candidates) < quantity:
         raise HTTPException(
             422,
-            (
-                f"Foram encontrados apenas {len(candidates)} problemas não resolvidos "
-                "com esses filtros. Amplie a faixa de dificuldade ou remova algumas tags."
-            ),
+            f"Foram encontrados apenas {len(candidates)} problemas não resolvidos com esses filtros. Amplie a faixa de dificuldade ou remova algumas tags.",
         )
-
     selected = random.SystemRandom().sample(candidates, quantity)
     selected.sort(key=lambda item: item["rating"])
-
     return {
         "quantity": quantity,
         "min": min_rating,
