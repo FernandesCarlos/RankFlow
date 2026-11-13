@@ -167,7 +167,6 @@ export async function checkCodeforcesVerificationSubmission(
     return (
       submittedContestId === contestId &&
       submission.problem?.index === index &&
-      submission.verdict === 'OK' &&
       submission.creationTimeSeconds >= startedAt
     );
   });
