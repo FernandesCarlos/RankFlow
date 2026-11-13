@@ -85,7 +85,7 @@ export default function HomeScreen() {
             <ProgressBar value={Math.min(100, Math.max(0, (user?.rating ?? 0) / 4000 * 100))} label="Rating em relação a 4000" />
           </Card>
         </Pressable>
-        <Text style={styles.footnote}>Problemas resolvidos calculados a partir das até 1000 submissões mais recentes retornadas pelo Codeforces.</Text>
+        <Text style={styles.footnote}>Problemas resolvidos calculados em todo o histórico público de submissões aceitas do Codeforces.</Text>
       </> : null}
     </Screen>
   );
