@@ -43,7 +43,13 @@ export default function HistoricoScreen() {
   const isCurrentTrainingSaved = Boolean(
     training?.sessionId && trainingHistory.some((item) => item.sessionId === training.sessionId)
   );
-  const savedHistory = trainingHistory;
+  const currentSessionFinished = activeSession?.status === 'finished';
+  const showCurrentTraining = Boolean(
+    training?.sessionId && (!isCurrentTrainingSaved || !currentSessionFinished)
+  );
+  const savedHistory = training?.sessionId && !currentSessionFinished
+    ? trainingHistory.filter((item) => item.sessionId !== training.sessionId)
+    : trainingHistory;
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
     null,
@@ -72,7 +78,7 @@ export default function HistoricoScreen() {
         onBack={() => goBack('/(tabs)/configuracoes')}
       />
 
-      {training?.sessionId && !isCurrentTrainingSaved ? <>
+      {showCurrentTraining ? <>
         <SectionTitle>Treino atual</SectionTitle>
         <Card>
           <Text style={{ color: colors.primary, fontSize: 17, fontWeight: '800' }}>
