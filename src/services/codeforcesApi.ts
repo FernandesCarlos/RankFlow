@@ -192,8 +192,7 @@ export type TrainingAttempt = {
   participant: string;
   problemId: string;
   verdict: string;
-  points: number;
-  submittedAt: string | null;
+  submittedAt: string;
 };
 
 export type TrainingProblemResult = {
