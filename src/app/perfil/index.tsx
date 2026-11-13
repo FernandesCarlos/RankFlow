@@ -24,6 +24,12 @@ export default function PerfilScreen() {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (!profile.codeforcesHandle.trim()) {
+      setData(null);
+      setError('Vincule seu handle do Codeforces nas configurações de plataformas.');
+      setLoading(false);
+      return;
+    }
     let active = true;
     setLoading(true);
     getCodeforcesSummary(profile.codeforcesHandle)
