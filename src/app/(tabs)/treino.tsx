@@ -80,6 +80,10 @@ export default function TreinoScreen() {
       setError('Informe uma faixa válida entre 800 e 4000, com dificuldade mínima menor ou igual à máxima.');
       return;
     }
+    if (!profile.codeforcesHandle.trim()) {
+      setError('Vincule seu handle do Codeforces nas configurações de plataformas antes de gerar um treino.');
+      return;
+    }
     if (!participants.includes(profile.codeforcesHandle)) {
       setError('Mantenha seu próprio handle entre os participantes do treino.');
       return;
