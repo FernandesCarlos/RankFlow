@@ -7,10 +7,10 @@ import {
   Card,
   Header,
   InfoBox,
-  LoadingSkeleton,
   OutlineButton,
   Screen,
 } from '../../components/ui';
+import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { useApp } from '../../state/AppContext';
 import { goBack } from '../../navigation/actions';
 import { colors } from '../../theme/colors';
