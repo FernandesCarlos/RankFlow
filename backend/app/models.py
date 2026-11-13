@@ -11,7 +11,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    codeforces_handle: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    codeforces_handle: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
+    email: Mapped[str | None] = mapped_column(String(254), unique=True, index=True, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(256), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
