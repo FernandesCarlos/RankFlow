@@ -32,7 +32,7 @@ export default function TreinoScreen() {
   const [max, setMax] = useState('1500');
   const [duration, setDuration] = useState('60');
   const initialStart = new Date(Date.now() + 5 * 60 * 1000);
-  const [startDate, setStartDate] = useState(initialStart.toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(`${initialStart.getFullYear()}-${String(initialStart.getMonth() + 1).padStart(2, '0')}-${String(initialStart.getDate()).padStart(2, '0')}`);
   const [startTime, setStartTime] = useState(`${String(initialStart.getHours()).padStart(2, '0')}:${String(initialStart.getMinutes()).padStart(2, '0')}`);
   const [problemMode, setProblemMode] = useState<'random' | 'manual'>('random');
   const [problemQuery, setProblemQuery] = useState('');
