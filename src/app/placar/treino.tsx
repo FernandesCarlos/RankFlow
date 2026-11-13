@@ -1,53 +1,69 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Card, Header, InfoBox, Screen } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { useApp } from '../../state/AppContext';
+import { getTrainingScoreboard, type TrainingScoreboard } from '../../services/codeforcesApi';
 
 export default function TrainingScoreboardScreen() {
-  const { trainingHistory } = useApp();
-  const rows = useMemo(() => {
-    const totals = new Map<string, { solved: number; points: number; sessions: number }>();
-    for (const training of trainingHistory) {
-      for (const result of training.results) {
-        const current = totals.get(result.participant) ?? { solved: 0, points: 0, sessions: 0 };
-        current.solved += result.solved;
-        current.points += result.points;
-        current.sessions += 1;
-        totals.set(result.participant, current);
-      }
+  const { sessionId: routeSessionId } = useLocalSearchParams<{ sessionId?: string }>();
+  const { training, trainingHistory } = useApp();
+  const [scoreboard, setScoreboard] = useState<TrainingScoreboard | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const sessionId = routeSessionId || training?.sessionId;
+
+  const refresh = useCallback(async () => {
+    if (!sessionId) return;
+    setLoading(true);
+    try {
+      setScoreboard(await getTrainingScoreboard(sessionId));
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível carregar o placar.');
+    } finally {
+      setLoading(false);
     }
-    return [...totals.entries()]
-      .map(([participant, stats]) => ({ participant, ...stats }))
-      .sort((a, b) => b.points - a.points || b.solved - a.solved);
-  }, [trainingHistory]);
+  }, [sessionId]);
+
+  useEffect(() => { refresh(); }, [refresh]);
 
   return (
     <Screen>
-      <Header title="Placar dos treinos" onBack={() => router.back()} />
-      <Text style={styles.title}>Desempenho nas sessões</Text>
-      <Text style={styles.subtitle}>Resultados acumulados dos treinos concluídos no RankFlow neste dispositivo.</Text>
-      {!rows.length ? <InfoBox>Você ainda não concluiu treinos com resultados registrados.</InfoBox> : rows.map((row, index) => (
-        <Card key={row.participant} style={styles.row}>
-          <Text style={styles.position}>{index + 1}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{row.participant}</Text>
-            <Text style={styles.caption}>{row.solved} problemas · {row.sessions} sessões</Text>
-          </View>
-          <Text style={styles.points}>{row.points} pts</Text>
+      <Header title="Placar" onBack={() => router.back()} />
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+        <View style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: colors.primarySoft }}>
+          <Text style={{ color: colors.primary, fontWeight: '800', textAlign: 'center' }}>Placar do treino</Text>
+        </View>
+        <View style={{ flex: 1, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border }}>
+          <Text onPress={() => router.replace('/(tabs)/placar')} style={{ color: colors.text, fontWeight: '700', textAlign: 'center' }}>Ranking de amigos</Text>
+        </View>
+      </View>
+      <Text style={{ color: colors.text, fontSize: 23, fontWeight: '800' }}>{scoreboard?.title ?? 'Competição RankFlow'}</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 5, marginBottom: 14 }}>Pontuação simulada das tentativas realizadas durante esta sessão.</Text>
+      {!sessionId ? <InfoBox>Crie um treino com cronômetro para acompanhar uma competição aqui. Os resultados antigos salvos localmente não representam uma sessão ao vivo.</InfoBox> : null}
+      {loading ? <InfoBox>Atualizando placar…</InfoBox> : null}
+      {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
+      {scoreboard ? <>
+        <Card>
+          <Text style={{ color: colors.text, fontWeight: '800' }}>Status: {scoreboard.status === 'active' ? 'Em andamento' : 'Encerrado'}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 5 }}>Início: {new Date(scoreboard.startedAt).toLocaleString('pt-BR')}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Duração: {scoreboard.durationMinutes} minutos</Text>
         </Card>
-      ))}
+        {scoreboard.ranking.map((row, index) => (
+          <Card key={row.participant} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Text style={{ color: colors.primary, fontSize: 19, fontWeight: '900', width: 24 }}>{index + 1}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontWeight: '800' }}>{row.participant}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{row.solved} resolvidos · {row.attempts} tentativas</Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 17, fontWeight: '900' }}>{row.points} pts</Text>
+          </Card>
+        ))}
+        <Text style={{ color: colors.muted, fontSize: 10, marginTop: 10 }}>Atualizado em {new Date(scoreboard.serverNow).toLocaleTimeString('pt-BR')}</Text>
+      </> : null}
+      <Text onPress={refresh} style={{ color: colors.primary, fontWeight: '800', paddingVertical: 14 }}>↻ Atualizar placar</Text>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  title: { color: colors.text, fontSize: 23, fontWeight: '800' },
-  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 5, marginBottom: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  position: { color: colors.primary, fontSize: 18, fontWeight: '800', width: 22 },
-  name: { color: colors.text, fontSize: 15, fontWeight: '800' },
-  caption: { color: colors.muted, fontSize: 12, marginTop: 4 },
-  points: { color: colors.text, fontSize: 16, fontWeight: '800' },
-});
