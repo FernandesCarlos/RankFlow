@@ -115,25 +115,27 @@ export default function AmigosScreen() {
       ) : null}
 
       {hydrated && !loading ? ranking.map((friend, index) => (
-        <Pressable
-          key={friend.handle}
-          accessibilityRole="button"
-          accessibilityLabel={`Posição ${index + 1}, ${friend.handle}, rating ${friend.user.rating ?? 'sem rating'}, ${friend.solvedCount} problemas resolvidos`}
-          onPress={() => router.push({ pathname: '/amigos/[handle]', params: { handle: friend.handle } })}
-        >
-          <Card style={styles.friendCard}>
-            <View style={styles.position}><Text style={styles.positionText}>{index + 1}</Text></View>
-            <Avatar initials={friend.handle.slice(0, 2).toUpperCase()} size={44} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.handle}>{friend.handle}</Text>
-              <Text style={styles.rank}>{friend.user.rank ?? 'Unrated'} · {friend.user.rating ?? '—'} rating</Text>
-              <Text style={styles.stats}>{friend.solvedCount} problemas resolvidos · {friend.contestCount} contests</Text>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Remover ${friend.handle} dos amigos`} onPress={() => remove(friend.handle)} style={styles.remove}>
-              <Text style={styles.removeText}>×</Text>
-            </Pressable>
-          </Card>
-        </Pressable>
+        <View key={friend.handle} style={styles.friendRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Posição ${index + 1}, ${friend.handle}, rating ${friend.user.rating ?? 'sem rating'}, ${friend.solvedCount} problemas resolvidos`}
+            onPress={() => router.push({ pathname: '/amigos/[handle]', params: { handle: friend.handle } })}
+            style={{ flex: 1 }}
+          >
+            <Card style={styles.friendCard}>
+              <View style={styles.position}><Text style={styles.positionText}>{index + 1}</Text></View>
+              <Avatar initials={friend.handle.slice(0, 2).toUpperCase()} size={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.handle}>{friend.handle}</Text>
+                <Text style={styles.rank}>{friend.user.rank ?? 'Unrated'} · {friend.user.rating ?? '—'} rating</Text>
+                <Text style={styles.stats}>{friend.solvedCount} problemas resolvidos · {friend.contestCount} contests</Text>
+              </View>
+            </Card>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Remover ${friend.handle} dos amigos`} onPress={() => remove(friend.handle)} style={styles.remove}>
+            <Text style={styles.removeText}>×</Text>
+          </Pressable>
+        </View>
       )) : null}
     </Screen>
   );
@@ -146,7 +148,8 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 19, fontWeight: '800', marginBottom: 4 },
   refresh: { borderWidth: 1, borderColor: colors.primary, borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8 },
   refreshText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
-  friendCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, marginBottom: 10 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 },
+  friendCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, marginBottom: 0 },
   position: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   positionText: { color: colors.primary, fontWeight: '800', fontSize: 12 },
   handle: { color: colors.text, fontSize: 15, fontWeight: '800' },
