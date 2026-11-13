@@ -8,7 +8,7 @@ import { getTrainingScoreboard, type TrainingScoreboard } from '../../services/c
 
 export default function TrainingScoreboardScreen() {
   const { sessionId: routeSessionId } = useLocalSearchParams<{ sessionId?: string }>();
-  const { training, trainingHistory } = useApp();
+  const { training } = useApp();
   const [scoreboard, setScoreboard] = useState<TrainingScoreboard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
