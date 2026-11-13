@@ -15,22 +15,22 @@ export function validateRegistration(input: { name: string; email: string; passw
   return '';
 }
 
-export type TrainingInput = { quantity: number; min: number; max: number; tags: string[]; participants: string[] };
-export function createTraining(input: TrainingInput) {
-  if (!Number.isInteger(input.quantity) || input.quantity < 3 || input.quantity > 6) throw new Error('Selecione de 3 a 6 problemas.');
-  if (!Number.isFinite(input.min) || !Number.isFinite(input.max) || input.min < 800 || input.max > 3500 || input.min > input.max) throw new Error('Use dificuldade entre 800 e 3500, com mínimo menor ou igual ao máximo.');
-  if (!input.tags.length) throw new Error('Selecione pelo menos uma tag.');
-  if (!input.participants.length) throw new Error('Selecione pelo menos um participante.');
-  return {
-    ...input,
-    participants: [...input.participants],
-    tags: [...input.tags],
-    problems: Array.from({ length: input.quantity }, (_, index) => ({
-      id: String(index + 1),
-      title: `Problema: ${index + 1}`,
-      tag: input.tags[index % input.tags.length],
-      rating: Math.round(input.min + ((input.max - input.min) * index) / Math.max(1, input.quantity - 1)),
-    })),
-  };
-}
-export type Training = ReturnType<typeof createTraining>;
+export type TrainingProblem = {
+  id: string;
+  contestId: number;
+  index: string;
+  title: string;
+  tag: string;
+  tags: string[];
+  rating: number;
+  url: string;
+};
+
+export type Training = {
+  quantity: number;
+  min: number;
+  max: number;
+  tags: string[];
+  participants: string[];
+  problems: TrainingProblem[];
+};
