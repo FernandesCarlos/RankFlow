@@ -165,9 +165,14 @@ function useAppState() {
               codeforcesHandle: user.codeforces_handle || current.codeforcesHandle,
               rating: user.rating || current.rating,
             }));
-          } catch {
-            await clearAuthToken();
-            setAuthenticated(false);
+          } catch (error) {
+            if (error instanceof Error && error.message === 'SESSION_INVALID') {
+              await clearAuthToken();
+              setAuthenticated(false);
+            } else {
+              // Uma falha temporária de rede não deve encerrar a sessão local.
+              setAuthenticated(true);
+            }
           }
         }
       } catch (error) {
