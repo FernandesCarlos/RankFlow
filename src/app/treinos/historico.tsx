@@ -40,9 +40,10 @@ export default function HistoricoScreen() {
     const timer = setInterval(refreshActive, 10000);
     return () => clearInterval(timer);
   }, [training?.sessionId, refreshActive]);
-  const savedHistory = training?.sessionId
-    ? trainingHistory.filter((item) => item.sessionId !== training.sessionId)
-    : trainingHistory;
+  const isCurrentTrainingSaved = Boolean(
+    training?.sessionId && trainingHistory.some((item) => item.sessionId === training.sessionId)
+  );
+  const savedHistory = trainingHistory;
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
     null,
