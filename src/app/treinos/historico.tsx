@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 
 import { AccessiblePressable } from '../../components/AccessiblePressable';
-import { MockData } from '../../components/LoadingSkeleton';
 import {
   Card,
   Header,
@@ -52,7 +51,6 @@ export default function HistoricoScreen() {
 
       <SectionTitle>Treinos concluídos</SectionTitle>
 
-      <MockData label="Carregando histórico">
         {!trainingHistory.length ? (
           <Card>
             <Text style={{ color: colors.muted }}>
@@ -214,7 +212,6 @@ export default function HistoricoScreen() {
             </View>
           ))
         )}
-      </MockData>
     </Screen>
   );
 }
