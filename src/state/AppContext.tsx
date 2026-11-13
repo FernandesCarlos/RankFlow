@@ -57,6 +57,7 @@ type PersistedAppState = {
   notifications?: Partial<typeof initialNotifications>;
   publicProfile?: boolean;
   trainingHistory?: CompletedTraining[];
+  training?: Training | null;
   friendHandles?: string[];
 };
 
@@ -129,6 +130,9 @@ function useAppState() {
             setNotifications({ ...initialNotifications, ...data.notifications });
           }
           if (typeof data.publicProfile === 'boolean') setPublicProfile(data.publicProfile);
+          if (data.training && Array.isArray(data.training.problems) && data.training.sessionId) {
+            setTraining(data.training);
+          }
           if (Array.isArray(data.trainingHistory)) {
             // Descarta históricos antigos gerados por treinos fictícios.
             const realTrainings = data.trainingHistory.filter((item) =>
@@ -164,12 +168,13 @@ function useAppState() {
       notifications,
       publicProfile,
       trainingHistory,
+      training,
       friendHandles,
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(error => {
       console.error('Erro ao salvar dados locais:', error);
     });
-  }, [hydrated, profile, notifications, publicProfile, trainingHistory, friendHandles]);
+  }, [hydrated, profile, notifications, publicProfile, trainingHistory, training, friendHandles]);
 
   function startTraining(value: Training) {
     setTraining(value);
