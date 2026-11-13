@@ -10,7 +10,6 @@ import {
   OutlineButton,
   PrimaryButton,
   Screen,
-  TextButton,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { loginAccount } from '../../services/auth';
@@ -75,13 +74,6 @@ export default function LoginScreen() {
           onChangeText={setSenha}
           placeholder="••••••••"
           secureTextEntry
-        />
-      </View>
-
-      <View style={{ alignItems: 'flex-end', marginTop: -6 }}>
-        <TextButton
-          title="Esqueci minha senha"
-          onPress={() => router.push('/(auth)/recuperar-senha')}
         />
       </View>
 
