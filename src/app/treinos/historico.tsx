@@ -72,9 +72,27 @@ export default function HistoricoScreen() {
         onBack={() => goBack('/(tabs)/configuracoes')}
       />
 
+      {training?.sessionId && !isCurrentTrainingSaved ? <>
+        <SectionTitle>Treino atual</SectionTitle>
+        <Card>
+          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: '800' }}>
+            {activeSession?.status === 'scheduled' ? 'Agendado' : activeSession?.status === 'finished' ? 'Concluído — aguardando salvar' : 'Em andamento'}
+          </Text>
+          <Text style={{ color: colors.muted, marginTop: 7 }}>
+            {training.problems.length} problemas · {training.participants.join(', ')}
+          </Text>
+          {activeSession?.startedAt ? <Text style={{ color: colors.muted, marginTop: 5 }}>
+            Início: {new Date(activeSession.startedAt).toLocaleString('pt-BR')}
+          </Text> : null}
+          <AccessiblePressable onPress={() => router.push('/treinos/resultado')} style={{ paddingVertical: 12 }}>
+            <Text style={{ color: colors.primary, fontWeight: '800' }}>Abrir treino e placar ›</Text>
+          </AccessiblePressable>
+        </Card>
+      </> : null}
+
       <SectionTitle>Treinos concluídos</SectionTitle>
 
-        {!trainingHistory.length ? (
+        {!savedHistory.length ? (
           <Card>
             <Text style={{ color: colors.muted }}>
               Nenhum treino concluído. Acesse a aba Treino, gere uma
