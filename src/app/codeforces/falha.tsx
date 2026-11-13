@@ -14,11 +14,10 @@ import {
   TextButton,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { mockCodeforces } from '../../mocks';
 
 
 export default function FalhaScreen() {
-  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const { authenticated, verificationOrigin } = useApp();
   const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{
     handle?: string;
@@ -50,16 +49,16 @@ export default function FalhaScreen() {
       <Card>
         <Text style={styles.cardTitle}>▤  Resumo da tentativa</Text>
 
-        <Summary label="Handle" value={params.handle ?? mockCodeforces.profile.handle} icon="♙" />
-        <Summary label="Problema" value={params.problem ?? mockCodeforces.verificationProblem.displayName} icon="▤" />
-        <Summary label="Linguagem" value={params.language ?? mockCodeforces.languages[0]} icon="</>" />
+        <Summary label="Handle" value={params.handle ?? '—'} icon="♙" />
+        <Summary label="Problema" value={params.problem ?? '—'} icon="▤" />
+        <Summary label="Linguagem" value={params.language ?? '—'} icon="</>" />
         <Summary label="Status" value="Tempo esgotado" icon="✕" danger />
       </Card>
 
       <Card>
         <Text style={styles.cardTitle}>i  Possíveis motivos</Text>
 
-        {mockCodeforces.failureReasons.map((reason) => (
+        {['A solução ainda não recebeu verdict OK.', 'A submissão pode ter sido enviada antes do início do desafio.', 'O Codeforces pode ainda não ter atualizado o histórico público.'].map((reason) => (
           <View key={reason} style={styles.reasonRow}>
             <Text style={styles.bullet}>•</Text>
             <Text style={styles.reason}>{reason}</Text>
