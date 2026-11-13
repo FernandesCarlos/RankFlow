@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { mockProfile } from '../mocks';
 import type { Training } from '../services/forms';
 
 const initialNotifications = {
@@ -36,8 +35,25 @@ type Notice = {
   tone: 'success' | 'info' | 'danger';
 } | null;
 
+const defaultProfile = {
+  name: '',
+  firstName: '',
+  username: '',
+  email: '',
+  initials: '',
+  rank: '',
+  rating: 0,
+  maxRating: 0,
+  problemsSolved: 0,
+  streakDays: 0,
+  contests: 0,
+  bio: '',
+  editBio: '',
+  codeforcesHandle: '',
+};
+
 type PersistedAppState = {
-  profile?: Partial<typeof mockProfile>;
+  profile?: Partial<typeof defaultProfile>;
   notifications?: Partial<typeof initialNotifications>;
   publicProfile?: boolean;
   trainingHistory?: CompletedTraining[];
@@ -48,7 +64,7 @@ const STORAGE_KEY = '@rankflow:app-state:v1';
 
 function useAppState() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [profile, setProfile] = useState({ ...mockProfile });
+  const [profile, setProfile] = useState({ ...defaultProfile });
   const [notifications, setNotifications] = useState(initialNotifications);
   const [publicProfile, setPublicProfile] = useState(true);
   const [training, setTraining] = useState<Training | null>(null);
@@ -91,7 +107,7 @@ function useAppState() {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved) {
           const data: PersistedAppState = JSON.parse(saved);
-          if (data.profile) setProfile({ ...mockProfile, ...data.profile });
+          if (data.profile) setProfile({ ...defaultProfile, ...data.profile });
           if (data.notifications) {
             setNotifications({ ...initialNotifications, ...data.notifications });
           }
@@ -145,7 +161,7 @@ function useAppState() {
 
   function signOut() {
     setAuthenticated(false);
-    setProfile({ ...mockProfile });
+    setProfile({ ...defaultProfile });
     setNotifications(initialNotifications);
     setPublicProfile(true);
     setTraining(null);
