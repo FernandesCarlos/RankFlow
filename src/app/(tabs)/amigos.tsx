@@ -84,11 +84,12 @@ export default function AmigosScreen() {
           label="Handle do Codeforces"
           value={query}
           onChangeText={setQuery}
+          editable={hydrated}
           placeholder="Ex.: tourist"
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <PrimaryButton title={adding ? 'Consultando Codeforces...' : 'Adicionar amigo'} onPress={addFriend} disabled={!query.trim() || adding} loading={adding} />
+        <PrimaryButton title={adding ? 'Consultando Codeforces...' : 'Adicionar amigo'} onPress={addFriend} disabled={!hydrated || !query.trim() || adding} loading={adding} />
       </Card>
 
       {notice ? <InfoBox tone="success">{notice}</InfoBox> : null}
