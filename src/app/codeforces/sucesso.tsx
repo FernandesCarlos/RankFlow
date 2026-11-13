@@ -13,8 +13,8 @@ import {
 import { colors } from '../../theme/colors';
 
 export default function SucessoScreen() {
-  const { authenticated, setVerifiedHandle, setProfile, setNotice } = useApp();
-  const origin = authenticated ? '/configuracoes/plataformas' : '/(auth)/cadastro';
+  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const params = useLocalSearchParams<{ handle?: string; problem?: string }>();
   const handle = typeof params.handle === 'string' ? params.handle.trim() : '';
   if (!handle) return <VerificationMissing />;
@@ -36,7 +36,7 @@ export default function SucessoScreen() {
       <InfoBox>O RankFlow encontrou um verdict OK para o problema após o início do desafio. Isso confirma a atividade pública nessa conta, mas não equivale a um método oficial de autenticação do Codeforces.</InfoBox>
       <PrimaryButton title="Vincular este handle" onPress={() => {
         setVerifiedHandle(handle);
-        if (authenticated) setProfile(current => ({ ...current, codeforcesHandle: handle }));
+        setProfile(current => ({ ...current, codeforcesHandle: handle }));
         setNotice({ message: `Handle ${handle} salvo no RankFlow.`, tone: 'success' });
         router.dismissTo(origin);
       }} />
