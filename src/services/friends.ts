@@ -1,12 +1,23 @@
 import {
-  getCodeforcesSummary,
+  buildCodeforcesSummary,
+  getCodeforcesSubmissions,
+  getCodeforcesUser,
   type CodeforcesSummary,
 } from './codeforcesApi';
 
 export type FriendSummary = CodeforcesSummary & { handle: string };
 
+// O ranking só precisa do perfil (rating) e das submissões (problemas resolvidos).
+// Evita consultar o histórico de contests para cada amigo.
 export async function loadFriendSummaries(handles: string[]): Promise<FriendSummary[]> {
-  const results = await Promise.allSettled(handles.map((handle) => getCodeforcesSummary(handle)));
+  const results = await Promise.allSettled(handles.map(async (handle) => {
+    const [user, submissions] = await Promise.all([
+      getCodeforcesUser(handle),
+      getCodeforcesSubmissions(handle),
+    ]);
+    return buildCodeforcesSummary(user, [], submissions);
+  }));
+
   return results.flatMap((result, index) =>
     result.status === 'fulfilled'
       ? [{ ...result.value, handle: handles[index] }]
