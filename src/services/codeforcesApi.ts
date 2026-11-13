@@ -58,10 +58,10 @@ export type CodeforcesTraining = {
   participants: string[];
 };
 
-async function request<T>(path: string): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`);
+    response = await fetch(`${API_BASE_URL}${path}`, init);
   } catch {
     throw new Error(
       `Não foi possível conectar ao RankFlow API em ${API_BASE_URL}. Confira se o backend está ativo e se EXPO_PUBLIC_API_URL aponta para o endereço acessível pelo dispositivo.`
@@ -158,4 +158,73 @@ export async function checkCodeforcesVerificationSubmission(
       submission.creationTimeSeconds >= startedAt
     );
   });
+}
+
+
+export type TrainingSession = {
+  id: string;
+  title: string;
+  creatorHandle: string;
+  participants: string[];
+  problems: CodeforcesProblem[];
+  durationMinutes: number;
+  startedAt: string;
+  endsAt: string;
+  status: 'active' | 'finished';
+  serverNow: string;
+  submissions: TrainingAttempt[];
+};
+
+export type TrainingAttempt = {
+  id: string;
+  participant: string;
+  problemId: string;
+  verdict: string;
+  points: number;
+  submittedAt: string | null;
+};
+
+export type TrainingScoreboard = TrainingSession & {
+  ranking: { participant: string; solved: number; points: number; attempts: number; lastSubmissionAt: string | null }[];
+};
+
+export function createTrainingSession(input: {
+  creatorHandle: string;
+  participants: string[];
+  problems: CodeforcesProblem[];
+  durationMinutes: number;
+}): Promise<TrainingSession> {
+  return request<TrainingSession>('/api/trainings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export function getTrainingSession(id: string): Promise<TrainingSession> {
+  return request<TrainingSession>(`/api/trainings/${encodeURIComponent(id)}`);
+}
+
+export function getTrainingScoreboard(id: string): Promise<TrainingScoreboard> {
+  return request<TrainingScoreboard>(`/api/trainings/${encodeURIComponent(id)}/scoreboard`);
+}
+
+export function simulateTrainingSubmission(input: {
+  sessionId: string;
+  participant: string;
+  problemId: string;
+  verdict: 'OK' | 'WRONG_ANSWER' | 'TIME_LIMIT_EXCEEDED' | 'RUNTIME_ERROR';
+}): Promise<TrainingSession> {
+  return request<TrainingSession>(
+    `/api/trainings/${encodeURIComponent(input.sessionId)}/submissions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participant: input.participant,
+        problemId: input.problemId,
+        verdict: input.verdict,
+      }),
+    },
+  );
 }
