@@ -15,7 +15,7 @@ export default function ConfiguracoesScreen() {
       <Divider />
       <SettingRow title="Plataformas" subtitle="Gerenciar conta Codeforces" onPress={() => router.push('/configuracoes/plataformas')} />
       <Divider />
-      <SettingRow title="Privacidade" subtitle="Visibilidade do perfil demonstrativo" onPress={() => information('privacidade')} />
+      <SettingRow title="Privacidade" subtitle="Visibilidade do perfil" onPress={() => information('privacidade')} />
     </Card>
     <Card>
       <SettingRow title="Notificações" subtitle="Escolher avisos e horários" onPress={() => router.push('/configuracoes/notificacoes')} />

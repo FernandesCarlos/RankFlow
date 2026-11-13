@@ -10,24 +10,43 @@ import {
   OutlineButton,
   PrimaryButton,
   Screen,
-  TextButton,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
+import { loginAccount } from '../../services/auth';
 
 export default function LoginScreen() {
-  const { setAuthenticated, setNotice } = useApp();
+  const { setAuthenticated, setProfile, setNotice } = useApp();
   const [error, setError] = useState('');
-  function enter() {
-    if (!login.trim() || !senha.trim()) { setError('Informe seu usuário e sua senha para continuar.'); return; }
-    setAuthenticated(true);
-  }
-  const [login, setLogin] = useState('carlos@email.com');
+  const [busy, setBusy] = useState(false);
+  const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
+  async function enter() {
+    if (!login.trim() || !senha) { setError('Informe seu e-mail e sua senha.'); return; }
+    setBusy(true);
+    setError('');
+    try {
+      const result = await loginAccount({ email: login, password: senha });
+      setProfile((current) => ({
+        ...current,
+        name: result.user.display_name || '',
+        firstName: (result.user.display_name || '').split(' ')[0],
+        email: result.user.email || login.trim(),
+        codeforcesHandle: result.user.codeforces_handle || '',
+        rating: result.user.rating || 0,
+      }));
+      setAuthenticated(true);
+      setNotice({ message: 'Login realizado com sucesso.', tone: 'success' });
+      router.replace('/(tabs)');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível entrar.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Screen contentStyle={styles.container}>
       <Header title="Login" onBack={() => goBack('/(auth)/boas-vindas')} />
-      <InfoBox>Modo demonstração: use qualquer usuário e uma senha fictícia.</InfoBox>
       <View style={styles.brandRow}>
         <View style={styles.logoCircle}>
           <Text style={styles.logoLetter}>R</Text>
@@ -42,10 +61,11 @@ export default function LoginScreen() {
 
       <View style={{ marginTop: 26 }}>
         <Field
-          label="E-mail ou usuário"
+          label="E-mail cadastrado"
           value={login}
           onChangeText={setLogin}
-          placeholder="carlos@email.com"
+          placeholder="voce@email.com"
+          keyboardType="email-address"
           autoCapitalize="none"
         />
 
@@ -58,17 +78,12 @@ export default function LoginScreen() {
         />
       </View>
 
-      <View style={{ alignItems: 'flex-end', marginTop: -6 }}>
-        <TextButton
-          title="Esqueci minha senha"
-          onPress={() => router.push('/(auth)/recuperar-senha')}
-        />
-      </View>
-
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
-        title="Entrar"
+        title={busy ? 'Entrando…' : 'Entrar'}
         onPress={enter}
+        disabled={busy}
+        loading={busy}
       />
 
       <View style={styles.dividerRow}>

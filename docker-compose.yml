@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rankflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rankflow
+      POSTGRES_USER: rankflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rankflow}
+    ports: ["5432:5432"]
+    volumes: ["rankflow-postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rankflow -d rankflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./backend
+    container_name: rankflow-api
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://rankflow:${POSTGRES_PASSWORD:-rankflow}@db:5432/rankflow
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  rankflow-postgres:

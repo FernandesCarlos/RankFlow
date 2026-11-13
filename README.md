@@ -1,109 +1,92 @@
 # RankFlow
 
-Aplicação de demonstração para **programação competitiva**, desenvolvida com React Native, Expo, Expo Router e TypeScript. O RankFlow permite explorar treinos, acompanhar resultados simulados, visualizar estatísticas e interagir com outros participantes em uma interface com foco em usabilidade e acessibilidade.
+Aplicativo mobile para programação competitiva, desenvolvido com React Native, Expo, Expo Router e TypeScript. O projeto integra dados públicos do Codeforces por meio de um backend próprio.
 
 ## Funcionalidades
 
-- **Autenticação demonstrativa:** telas de boas-vindas, login, cadastro e recuperação de senha.
-- **Treinos:** geração de listas demonstrativas de problemas com filtros e configurações.
-- **Histórico de treinos:** consulta de treinos concluídos e visualização de resultados.
-- **Placar e estatísticas:** visualização de informações e desempenho simulado.
-- **Amigos:** busca de participantes e visualização de perfis.
-- **Perfil e configurações:** edição de informações pessoais e preferências.
-- **Integração demonstrativa com Codeforces:** fluxo simulado de consulta e verificação de conta.
-- **Navegação e acessibilidade:** rotas organizadas, feedback visual, estados de carregamento e controles acessíveis.
+- Acompanhamento de rating atual e máximo.
+- Histórico de contests e evolução de rating.
+- Estatísticas de problemas resolvidos por tag.
+- Cadastro local de amigos por handle público do Codeforces.
+- Ranking dos amigos por rating e, em caso de empate, problemas resolvidos.
+- Placar separado para sessões de treino criadas no RankFlow.
+- Criação de treinos personalizados.
 
 ## Tecnologias
 
-- React Native
-- Expo e Expo Router
-- TypeScript
-- AsyncStorage para persistência local dos dados implementados
-- lucide-react-native e react-native-svg
-- Docker para execução em ambiente conteinerizado
-- Jest e ferramentas de teste configuradas no projeto
+- Mobile: React Native, Expo e TypeScript.
+- Backend: Python, FastAPI, SQLAlchemy e HTTPX.
+- Banco de dados: PostgreSQL 16.
+- Serviço externo: API pública do Codeforces.
+- Persistência local: AsyncStorage.
+- Docker Compose para execução local.
 
-## Requisitos
+## Estrutura
 
-- Node.js 22.13 ou superior
-- npm
-- Expo Go compatível com o SDK utilizado pelo projeto, ou um development build compatível
-
-## Como executar
-
-Clone o repositório e acesse a pasta do projeto:
-
-```bash
-git clone https://github.com/FernandesCarlos/RankFlow.git
-cd RankFlow
+```text
+RankFlow/
+├── backend/       # API FastAPI e integração Codeforces
+├── src/           # Aplicativo React Native
+├── docs/          # Documentação por etapa
+├── docker-compose.yml
+└── package.json
 ```
 
-Instale as dependências e inicie o Expo:
+## Executar o backend
 
-```bash
-npm ci
-npm start
-```
+1. Copie o arquivo de exemplo:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+   No PowerShell:
+   ```powershell
+   Copy-Item backend/.env.example backend/.env
+   ```
+2. Preencha os segredos exigidos no arquivo local `backend/.env`. Não versione esse arquivo.
+3. Inicie os serviços:
+   ```bash
+   docker compose up --build
+   ```
+4. Verifique:
+   - API: http://localhost:8000/health
+   - Swagger: http://localhost:8000/docs
 
-Leia o QR Code com o Expo Go compatível com o projeto.
+## Executar o aplicativo mobile
 
-Para executar no navegador:
+1. Instale as dependências na raiz:
+   ```bash
+   npm install
+   ```
+2. Copie `.env.example` para `.env` na raiz e configure `EXPO_PUBLIC_API_URL` com a URL acessível do backend. Para simulador no mesmo computador, use `http://localhost:8000`. Em dispositivo físico, use o IP local do computador.
+3. Inicie o Expo:
+   ```bash
+   npx expo start
+   ```
 
-```bash
-npm run web
-```
+## Integração Codeforces
 
-Para iniciar em um emulador ou simulador configurado:
+O aplicativo chama o backend RankFlow por HTTP. O backend consulta a base `https://codeforces.com/api` usando os métodos públicos:
 
-```bash
-npm run android
-npm run ios
-```
+- `GET /user.info?handles={handle}`
+- `GET /user.rating?handle={handle}`
+- `GET /user.status?handle={handle}&from=1&count=1000`
 
-### Executar com Docker
+Endpoints internos:
+- `GET /api/codeforces/users/{handle}`
+- `GET /api/codeforces/users/{handle}/rating`
+- `GET /api/codeforces/users/{handle}/submissions?count=1000`
 
-Com o Docker instalado e em execução, utilize:
+As telas Início, Estatísticas, Amigos e Placar usam esses dados. O número de problemas resolvidos é calculado a partir das até 1000 submissões mais recentes, contando problemas distintos com veredito `OK`. Portanto, o valor representa a amostra consultada, não necessariamente o total histórico completo.
 
-```bash
-docker build -t rankflow .
-docker run --rm -it --init -p 8081:8081 --name rankflow rankflow
-```
-
-A configuração do contêiner inicia o servidor Expo usando túnel. Aguarde a conexão e siga as instruções exibidas no terminal para abrir o aplicativo. O túnel requer conexão com a internet e não gera um APK.
-
-A validação em dispositivos físicos também é recomendada para conferir navegação, acessibilidade, teclado, áreas seguras da tela e comportamento do botão Voltar.
-
-## Limitações
-
-O RankFlow é um protótipo demonstrativo. Não possui backend ou autenticação real. A geração de problemas, o placar, os resultados e os fluxos de Codeforces utilizam dados ou comportamentos simulados.
-
-Os dados persistidos localmente dependem das funcionalidades implementadas no armazenamento do aplicativo. A persistência local não equivale à sincronização entre dispositivos ou a um serviço remoto.
+Na tela Amigos, o usuário cadastra handles manualmente. A lista fica persistida localmente via AsyncStorage. O ranking é ordenado por rating decrescente e, em caso de empate, por problemas resolvidos. O placar de treinos RankFlow permanece separado.
 
 ## Documentação
 
-A documentação detalhada está disponível na pasta [`docs/`](docs/):
-
 - [Proposta do projeto](docs/proposta.md)
-- [Documentação de navegação, UX, acessibilidade e testes](docs/etapa-03.md)
-- [Documentação de persistência local](docs/etapa-04.md)
+- [Etapa 03 — UX e navegação](docs/etapa-03.md)
+- [Etapa 04 — Persistência local](docs/etapa-04.md)
+- [Etapa 06 — Integração com API externa](docs/etapa-06.md)
 
-Consulte esses arquivos para conhecer as decisões de implementação, os fluxos da aplicação, os procedimentos de teste e os detalhes técnicos.
+## Estado atual
 
-## Estrutura do projeto
-
-```text
-src/
-├── app/         # Telas e rotas do Expo Router
-├── components/  # Componentes reutilizáveis
-├── mocks/       # Dados demonstrativos
-├── navigation/  # Ações auxiliares de navegação
-├── services/    # Serviços e regras de negócio
-├── state/       # Estado compartilhado da aplicação
-└── theme/       # Tema e identidade visual
-docs/            # Documentação do projeto
-tests/           # Testes automatizados
-```
-
-## Repositório
-
-Código-fonte: [github.com/FernandesCarlos/RankFlow](https://github.com/FernandesCarlos/RankFlow)
+A integração de consulta Codeforces está implementada no backend e conectada às telas principais. O fluxo de autenticação OIDC e a integração mobile completa ainda dependem de configuração e finalização próprias. A lista de amigos é local ao dispositivo nesta versão.

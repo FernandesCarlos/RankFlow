@@ -17,13 +17,13 @@ import { useApp } from '../../state/AppContext';
 import { validateProfile } from '../../services/forms';
 
 export default function EditarPerfilScreen() {
-  const { profile: mockProfile, setProfile, setNotice } = useApp();
+  const { profile, setProfile, setNotice } = useApp();
   const [error, setError] = useState('');
-  const [nome, setNome] = useState(mockProfile.name);
-  const [username, setUsername] = useState(mockProfile.username);
-  const [email, setEmail] = useState(mockProfile.email);
-  const [bio, setBio] = useState(mockProfile.bio);
-  const [handle, setHandle] = useState(mockProfile.codeforcesHandle);
+  const [nome, setNome] = useState(profile.name);
+  const [username, setUsername] = useState(profile.username);
+  const [email, setEmail] = useState(profile.email);
+  const [bio, setBio] = useState(profile.bio);
+  const [handle, setHandle] = useState(profile.codeforcesHandle);
 
   return (
     <Screen>
@@ -34,7 +34,7 @@ export default function EditarPerfilScreen() {
       />
 
       <Card style={styles.photoCard}>
-        <Avatar initials={mockProfile.initials} size={66} />
+        <Avatar initials={profile.initials} size={66} />
 
         <View style={{ flex: 1 }}>
           <Text style={styles.photoTitle}>Foto do perfil</Text>

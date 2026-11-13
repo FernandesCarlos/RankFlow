@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -8,8 +7,8 @@ import React, {
 } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { mockProfile } from '../mocks';
 import type { Training } from '../services/forms';
+import { clearAuthToken, getCurrentUser, getStoredToken } from '../services/auth';
 
 const initialNotifications = {
   allowed: true,
@@ -37,23 +36,43 @@ type Notice = {
   tone: 'success' | 'info' | 'danger';
 } | null;
 
+const defaultProfile = {
+  name: '',
+  firstName: '',
+  username: '',
+  email: '',
+  initials: '',
+  rank: '',
+  rating: 0,
+  maxRating: 0,
+  problemsSolved: 0,
+  streakDays: 0,
+  contests: 0,
+  bio: '',
+  editBio: '',
+  codeforcesHandle: '',
+};
+
 type PersistedAppState = {
-  profile?: Partial<typeof mockProfile>;
+  profile?: Partial<typeof defaultProfile>;
   notifications?: Partial<typeof initialNotifications>;
   publicProfile?: boolean;
   trainingHistory?: CompletedTraining[];
+  training?: Training | null;
+  friendHandles?: string[];
 };
 
 const STORAGE_KEY = '@rankflow:app-state:v1';
 
 function useAppState() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [profile, setProfile] = useState({ ...mockProfile });
+  const [profile, setProfile] = useState({ ...defaultProfile });
   const [notifications, setNotifications] = useState(initialNotifications);
   const [publicProfile, setPublicProfile] = useState(true);
   const [training, setTraining] = useState<Training | null>(null);
   const [trainingHistory, setTrainingHistory] = useState<CompletedTraining[]>([]);
   const [completedTrainingId, setCompletedTrainingId] = useState<string | null>(null);
+  const [friendHandles, setFriendHandles] = useState<string[]>([]);
 
   const [verifiedHandle, setVerifiedHandle] = useState('');
   const [verificationOrigin, setVerificationOrigin] = useState<'cadastro' | 'plataformas'>('cadastro');
@@ -61,47 +80,99 @@ function useAppState() {
 
   // Indica se o carregamento inicial terminou.
   const [hydrated, setHydrated] = useState(false);
-  
-  function deleteTraining(id: string) {
-    setTrainingHistory(current =>
-      current.filter(item => item.id !== id)
-    );
 
-    if (completedTrainingId === id) {
-      setCompletedTrainingId(null);
-    }
+  function addFriendHandle(handle: string) {
+    const normalized = handle.trim();
+    if (!normalized) return;
+    setFriendHandles((current) =>
+      current.some((item) => item.toLowerCase() === normalized.toLowerCase())
+        ? current
+        : [...current, normalized]
+    );
   }
-  
+
+  function removeFriendHandle(handle: string) {
+    setFriendHandles((current) =>
+      current.filter((item) => item.toLowerCase() !== handle.toLowerCase())
+    );
+  }
+
+  function deleteTraining(id: string) {
+    setTrainingHistory(current => current.filter(item => item.id !== id));
+    if (completedTrainingId === id) setCompletedTrainingId(null);
+  }
 
   // Recupera os dados salvos ao abrir o aplicativo.
   useEffect(() => {
     async function loadData() {
       try {
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
-
         if (saved) {
           const data: PersistedAppState = JSON.parse(saved);
-
           if (data.profile) {
-            setProfile({
-              ...mockProfile,
-              ...data.profile,
-            });
+            const restoredProfile = { ...defaultProfile, ...data.profile };
+            const wasSeedProfile =
+              data.profile.codeforcesHandle === 'FernandesCarlos' &&
+              data.profile.email === 'carlos@email.com' &&
+              data.profile.rating === 1482 &&
+              data.profile.problemsSolved === 327;
+            if (wasSeedProfile) {
+              restoredProfile.codeforcesHandle = '';
+              restoredProfile.rank = '';
+              restoredProfile.rating = 0;
+              restoredProfile.maxRating = 0;
+              restoredProfile.problemsSolved = 0;
+              restoredProfile.streakDays = 0;
+              restoredProfile.contests = 0;
+            }
+            setProfile(restoredProfile);
           }
-
           if (data.notifications) {
-            setNotifications({
-              ...initialNotifications,
-              ...data.notifications,
-            });
+            setNotifications({ ...initialNotifications, ...data.notifications });
           }
-
-          if (typeof data.publicProfile === 'boolean') {
-            setPublicProfile(data.publicProfile);
+          if (typeof data.publicProfile === 'boolean') setPublicProfile(data.publicProfile);
+          if (data.training && Array.isArray(data.training.problems) && data.training.sessionId) {
+            setTraining(data.training);
           }
-
           if (Array.isArray(data.trainingHistory)) {
-            setTrainingHistory(data.trainingHistory);
+            // Descarta históricos antigos gerados por treinos fictícios.
+            const realTrainings = data.trainingHistory.filter((item) =>
+              Array.isArray(item.problems) &&
+              item.problems.length > 0 &&
+              item.problems.every((problem) =>
+                typeof problem.url === 'string' &&
+                problem.url.startsWith('https://codeforces.com/problemset/problem/') &&
+                typeof problem.contestId === 'number' &&
+                typeof problem.index === 'string'
+              )
+            );
+            setTrainingHistory(realTrainings);
+          }
+          if (Array.isArray(data.friendHandles)) {
+            setFriendHandles([...new Set(data.friendHandles.filter((item) => typeof item === 'string' && item.trim()))]);
+          }
+        }
+        const token = await getStoredToken();
+        if (token) {
+          try {
+            const user = await getCurrentUser(token);
+            setAuthenticated(true);
+            setProfile((current) => ({
+              ...current,
+              name: user.display_name || current.name,
+              firstName: (user.display_name || current.name).split(' ')[0],
+              email: user.email || current.email,
+              codeforcesHandle: user.codeforces_handle || current.codeforcesHandle,
+              rating: user.rating || current.rating,
+            }));
+          } catch (error) {
+            if (error instanceof Error && error.message === 'SESSION_INVALID') {
+              await clearAuthToken();
+              setAuthenticated(false);
+            } else {
+              // Uma falha temporária de rede não deve encerrar a sessão local.
+              setAuthenticated(true);
+            }
           }
         }
       } catch (error) {
@@ -110,27 +181,24 @@ function useAppState() {
         setHydrated(true);
       }
     }
-    
     loadData();
-  }, 
-  
-  []);
+  }, []);
 
   // Salva os dados quando algum estado persistido mudar.
   useEffect(() => {
     if (!hydrated) return;
-
     const data: PersistedAppState = {
       profile,
       notifications,
       publicProfile,
       trainingHistory,
+      training,
+      friendHandles,
     };
-
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(error => {
       console.error('Erro ao salvar dados locais:', error);
     });
-  }, [hydrated, profile, notifications, publicProfile, trainingHistory]);
+  }, [hydrated, profile, notifications, publicProfile, trainingHistory, training, friendHandles]);
 
   function startTraining(value: Training) {
     setTraining(value);
@@ -139,43 +207,35 @@ function useAppState() {
 
   function completeTraining() {
     if (!training || completedTrainingId) return;
-
+    const existing = trainingHistory.find((item) => item.sessionId && item.sessionId === training.sessionId);
+    if (existing) {
+      setCompletedTrainingId(existing.id);
+      return;
+    }
     const id = `${Date.now()}-${trainingHistory.length + 1}`;
-
     const completed: CompletedTraining = {
       ...training,
       id,
       completedAt: new Date().toISOString(),
-      results: training.participants.map((participant, index) => {
-        const solved = Math.max(0, training.problems.length - index);
-
-        return {
-          participant,
-          solved,
-          points: solved * 100,
-        };
-      }),
+      results: [],
     };
-
     setTrainingHistory(current => [completed, ...current]);
     setCompletedTrainingId(id);
   }
 
   function signOut() {
+    clearAuthToken().catch(() => undefined);
     setAuthenticated(false);
-    setProfile({ ...mockProfile });
+    setProfile({ ...defaultProfile });
     setNotifications(initialNotifications);
     setPublicProfile(true);
     setTraining(null);
     setTrainingHistory([]);
     setCompletedTrainingId(null);
+    setFriendHandles([]);
     setVerifiedHandle('');
     setVerificationOrigin('cadastro');
-
-    setNotice({
-      message: 'Você saiu da sessão.',
-      tone: 'info',
-    });
+    setNotice({ message: 'Você saiu da sessão.', tone: 'info' });
   }
 
   return {
@@ -193,12 +253,16 @@ function useAppState() {
     trainingHistory,
     completedTrainingId,
     completeTraining,
+    friendHandles,
+    addFriendHandle,
+    removeFriendHandle,
     verifiedHandle,
     setVerifiedHandle,
     verificationOrigin,
     setVerificationOrigin,
     notice,
     setNotice,
+    hydrated,
     signOut,
   };
 }
@@ -213,14 +277,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-
-
 export function useApp() {
   const context = useContext(AppContext);
-
-  if (!context) {
-    throw new Error('useApp deve ser usado dentro de AppProvider.');
-  }
-
+  if (!context) throw new Error('useApp deve ser usado dentro de AppProvider.');
   return context;
 }

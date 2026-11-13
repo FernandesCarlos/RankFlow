@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Platform,
@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 
 import { AccessiblePressable } from '../../components/AccessiblePressable';
-import { MockData } from '../../components/LoadingSkeleton';
 import {
   Card,
   Header,
@@ -19,9 +18,38 @@ import {
 import { goBack } from '../../navigation/actions';
 import { useApp } from '../../state/AppContext';
 import { colors } from '../../theme/colors';
+import { getTrainingSession, type TrainingSession } from '../../services/codeforcesApi';
 
 export default function HistoricoScreen() {
-  const { trainingHistory, deleteTraining } = useApp();
+  const { training, trainingHistory, deleteTraining } = useApp();
+  const [activeSession, setActiveSession] = useState<TrainingSession | null>(null);
+  const refreshActive = useCallback(async () => {
+    if (!training?.sessionId) {
+      setActiveSession(null);
+      return;
+    }
+    try {
+      setActiveSession(await getTrainingSession(training.sessionId));
+    } catch {
+      setActiveSession(null);
+    }
+  }, [training?.sessionId]);
+  useEffect(() => { refreshActive(); }, [refreshActive]);
+  useEffect(() => {
+    if (!training?.sessionId) return;
+    const timer = setInterval(refreshActive, 10000);
+    return () => clearInterval(timer);
+  }, [training?.sessionId, refreshActive]);
+  const isCurrentTrainingSaved = Boolean(
+    training?.sessionId && trainingHistory.some((item) => item.sessionId === training.sessionId)
+  );
+  const currentSessionFinished = activeSession?.status === 'finished';
+  const showCurrentTraining = Boolean(
+    training?.sessionId && (!isCurrentTrainingSaved || !currentSessionFinished)
+  );
+  const savedHistory = training?.sessionId && !currentSessionFinished
+    ? trainingHistory.filter((item) => item.sessionId !== training.sessionId)
+    : trainingHistory;
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
     null,
@@ -50,18 +78,35 @@ export default function HistoricoScreen() {
         onBack={() => goBack('/(tabs)/configuracoes')}
       />
 
+      {showCurrentTraining ? <>
+        <SectionTitle>Treino atual</SectionTitle>
+        <Card>
+          <Text style={{ color: colors.primary, fontSize: 17, fontWeight: '800' }}>
+            {activeSession?.status === 'scheduled' ? 'Agendado' : activeSession?.status === 'finished' ? 'Concluído — aguardando salvar' : 'Em andamento'}
+          </Text>
+          <Text style={{ color: colors.muted, marginTop: 7 }}>
+            {training?.problems.length ?? 0} problemas · {training?.participants.join(', ') ?? ''}
+          </Text>
+          {activeSession?.startedAt ? <Text style={{ color: colors.muted, marginTop: 5 }}>
+            Início: {new Date(activeSession.startedAt).toLocaleString('pt-BR')}
+          </Text> : null}
+          <AccessiblePressable onPress={() => router.push('/treinos/resultado')} style={{ paddingVertical: 12 }}>
+            <Text style={{ color: colors.primary, fontWeight: '800' }}>Abrir treino e placar ›</Text>
+          </AccessiblePressable>
+        </Card>
+      </> : null}
+
       <SectionTitle>Treinos concluídos</SectionTitle>
 
-      <MockData label="Carregando histórico">
-        {!trainingHistory.length ? (
+        {!savedHistory.length ? (
           <Card>
             <Text style={{ color: colors.muted }}>
               Nenhum treino concluído. Acesse a aba Treino, gere uma
-              lista e conclua um treino para visualizar os resultados aqui.
+              lista e salve o treino para visualizar os problemas aqui.
             </Text>
           </Card>
         ) : (
-          trainingHistory.map((item) => (
+          savedHistory.map((item) => (
             <View key={item.id} style={{ marginBottom: 12 }}>
               <Card>
                 <AccessiblePressable
@@ -214,7 +259,6 @@ export default function HistoricoScreen() {
             </View>
           ))
         )}
-      </MockData>
     </Screen>
   );
 }

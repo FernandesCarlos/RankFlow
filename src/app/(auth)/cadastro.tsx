@@ -15,29 +15,45 @@ import {
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
+import { registerAccount } from '../../services/auth';
 
 export default function CadastroScreen() {
   const { setAuthenticated, setProfile, setNotice, verifiedHandle, setVerificationOrigin } = useApp();
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
 
   const verified = Boolean(verifiedHandle);
-  function register() {
+  async function register() {
     const message = validateRegistration({ name: nome, email, password: senha, confirmation: confirmacao });
     setError(message);
     if (message) return;
-    setProfile(current => ({ ...current, name: nome.trim(), firstName: nome.trim().split(' ')[0], email: email.trim(), codeforcesHandle: verifiedHandle || current.codeforcesHandle }));
-    setNotice({ message: 'Conta de demonstração criada nesta sessão. Os dados não são enviados a um servidor.', tone: 'success' });
-    setAuthenticated(true);
+    setBusy(true);
+    try {
+      const result = await registerAccount({ name: nome.trim(), email: email.trim(), password: senha });
+      setProfile(current => ({
+        ...current,
+        name: result.user.display_name || nome.trim(),
+        firstName: (result.user.display_name || nome.trim()).split(' ')[0],
+        email: result.user.email || email.trim(),
+        codeforcesHandle: result.user.codeforces_handle || verifiedHandle || current.codeforcesHandle,
+      }));
+      setNotice({ message: 'Conta criada com sucesso.', tone: 'success' });
+      setAuthenticated(true);
+      router.replace('/(tabs)');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar sua conta.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <Screen>
       <Header title="Cadastro" onBack={() => goBack('/(auth)/boas-vindas')} />
-      <InfoBox>Cadastro demonstrativo. Use dados e senha fictícios.</InfoBox>
       <View style={styles.stepBadge}>
         <Text style={styles.stepBadgeText}>01 Cadastro</Text>
       </View>
@@ -66,7 +82,7 @@ export default function CadastroScreen() {
           label="Senha"
           value={senha}
           onChangeText={setSenha}
-          placeholder="••••••••••"
+          placeholder="Mínimo de 8 caracteres"
           secureTextEntry
         />
         <Field
@@ -102,12 +118,14 @@ export default function CadastroScreen() {
 
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       <PrimaryButton
-        title="Criar conta"
+        title={busy ? 'Criando conta…' : 'Criar conta'}
         onPress={register}
+        disabled={busy}
+        loading={busy}
       />
 
       <Text style={styles.notice}>
-        Você precisará verificar sua conta do Codeforces para participar de arenas.
+Sua senha será armazenada de forma protegida. Vincular o Codeforces é opcional e pode ser feito depois.
       </Text>
 
       <TextButton title="Já tenho conta: entrar" onPress={() => router.dismissTo('/(auth)/login')} />

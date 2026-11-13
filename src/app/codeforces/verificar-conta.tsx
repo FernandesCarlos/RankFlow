@@ -16,39 +16,52 @@ import {
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { findCodeforcesUser } from '../../services/codeforces';
-import { mockCodeforces } from '../../mocks';
+
+const LANGUAGES = ['GNU G++17', 'Python 3', 'Java 21'];
 
 export default function VerificarContaScreen() {
-  const { authenticated, verificationOrigin, setVerifiedHandle, setProfile, setNotice } = useApp();
+  const { authenticated, verificationOrigin } = useApp();
   const origin = authenticated || verificationOrigin === 'plataformas' ? '/configuracoes/plataformas' : '/(auth)/cadastro';
   const [handle, setHandle] = useState('');
   const [languageIndex, setLanguageIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const language = mockCodeforces.languages[languageIndex];
-
+  const language = LANGUAGES[languageIndex];
   const active = useRef(false);
   const busy = useRef(false);
+
   useFocusEffect(useCallback(() => {
     active.current = true;
     return () => { active.current = false; };
   }, []));
+
   async function confirm() {
     if (busy.current || !handle.trim()) return;
     busy.current = true;
     setLoading(true);
     setError('');
     try {
-      const profile = await findCodeforcesUser(handle);
+      const account = await findCodeforcesUser(handle);
       if (!active.current) return;
-      if (!profile) { setError('Não encontramos esse usuário. Confira o handle e tente novamente.'); return; }
-      router.push({ pathname: '/codeforces/conta-encontrada', params: {
-        handle: profile.handle, rating: String(profile.rating), ranking: profile.ranking,
-        memberSince: String(profile.memberSince), language,
-      } });
-    } catch {
-      if (active.current) setError('Não foi possível consultar a conta. Tente novamente.');
+      if (!account) {
+        setError('Informe um handle válido do Codeforces.');
+        return;
+      }
+      router.push({
+        pathname: '/codeforces/conta-encontrada',
+        params: {
+          handle: account.handle,
+          rating: String(account.rating),
+          rank: account.rank,
+          memberSince: String(account.memberSince),
+          language,
+        },
+      });
+    } catch (err) {
+      if (active.current) {
+        setError(err instanceof Error ? err.message : 'Não foi possível consultar a conta. Tente novamente.');
+      }
     } finally {
       busy.current = false;
       if (active.current) setLoading(false);
@@ -57,84 +70,52 @@ export default function VerificarContaScreen() {
 
   return (
     <Screen>
-      <Header
-        title="Verificar conta do Codeforces"
-        onBack={() => goBack(origin)}
-      />
-
+      <Header title="Vincular conta do Codeforces" onBack={() => goBack(origin)} />
       <Text style={styles.subtitle}>
-        Informe seus dados do Codeforces para iniciarmos a verificação.
+        Informe seu handle público do Codeforces. Os dados exibidos serão consultados na API oficial.
       </Text>
-
-      <InfoBox>
-        Modo demonstração: a busca e a verificação são simuladas. Use “naoexiste” para testar uma conta não encontrada.
-      </InfoBox>
 
       <Field
         label="Handle do Codeforces"
         value={handle}
         onChangeText={setHandle}
-        placeholder="♙  Ex.: tourist"
+        placeholder="Ex.: tourist"
         autoCapitalize="none"
         autoCorrect={false}
       />
 
-      <Text style={styles.label}>Linguagem da submissão</Text>
-
+      <Text style={styles.label}>Linguagem que pretende usar</Text>
       <Pressable
-        accessibilityLabel={`Linguagem da submissão: ${language}`}
+        accessibilityLabel={`Linguagem: ${language}`}
         accessibilityHint="Ative para selecionar a próxima linguagem"
-        onPress={() =>
-          setLanguageIndex((current) => (current + 1) % mockCodeforces.languages.length)
-        }
+        onPress={() => setLanguageIndex((current) => (current + 1) % LANGUAGES.length)}
         style={styles.select}
       >
         <Text style={styles.selectText}>{'</>'}  {language}</Text>
         <Text style={styles.caret}>⌄</Text>
       </Pressable>
 
-      <Text accessibilityRole="header" style={styles.sectionTitle}>?  O que acontece depois?</Text>
-
+      <Text accessibilityRole="header" style={styles.sectionTitle}>Como funciona</Text>
       <Card>
-        <Step
-          icon="🔍"
-          text="Encontraremos sua conta no Codeforces."
-        />
-        <Step
-          icon="⚙"
-          text="Geraremos um desafio de verificação."
-        />
-        <Step
-          icon="⏱"
-          text="O timer de verificação será iniciado."
-          last
-        />
+        <Step icon="1" text="Consultamos seu perfil público no Codeforces." />
+        <Step icon="2" text="Selecionamos um problema real ainda não resolvido pelo seu handle." />
+        <Step icon="3" text="Você envia qualquer tentativa; o RankFlow verifica a submissão pública, mesmo que não seja Accepted." last />
       </Card>
 
-      {loading ? <LoadingSkeleton label="Buscando conta Codeforces" /> : null}
+      {loading ? <LoadingSkeleton label="Consultando usuário no Codeforces" /> : null}
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
-
       <PrimaryButton
-        title={loading ? 'Procurando...' : 'Confirmar dados'}
+        title={loading ? 'Consultando...' : 'Consultar conta'}
         disabled={!handle.trim()}
         loading={loading}
         onPress={confirm}
       />
-
       <TextButton title="Cancelar" onPress={() => goBack(origin)} />
     </Screen>
   );
 }
 
-function Step({
-  icon,
-  text,
-  last = false,
-}: {
-  icon: string;
-  text: string;
-  last?: boolean;
-}) {
+function Step({ icon, text, last = false }: { icon: string; text: string; last?: boolean }) {
   return (
     <View style={[styles.step, !last && styles.stepBorder]}>
       <Text style={styles.stepIcon}>{icon}</Text>
@@ -144,64 +125,14 @@ function Step({
 }
 
 const styles = StyleSheet.create({
-  subtitle: {
-    color: colors.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: -8,
-    marginBottom: 18,
-  },
-  label: {
-    color: colors.text,
-    fontWeight: '700',
-    fontSize: 14,
-    marginBottom: 7,
-  },
-  select: {
-    minHeight: 52,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    marginBottom: 22,
-  },
-  selectText: {
-    color: colors.text,
-    fontWeight: '600',
-  },
-  caret: {
-    color: colors.muted,
-    fontSize: 20,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  step: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  stepBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  stepIcon: {
-    width: 28,
-    fontSize: 17,
-  },
-  stepText: {
-    flex: 1,
-    color: colors.text,
-    lineHeight: 19,
-    fontSize: 13,
-  },
+  subtitle: { color: colors.muted, textAlign: 'center', lineHeight: 20, marginTop: -8, marginBottom: 18 },
+  label: { color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 7 },
+  select: { minHeight: 52, paddingVertical: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, marginBottom: 22 },
+  selectText: { color: colors.text, fontWeight: '600' },
+  caret: { color: colors.muted, fontSize: 20 },
+  sectionTitle: { color: colors.text, fontWeight: '800', fontSize: 16, marginBottom: 10 },
+  step: { flexDirection: 'row', gap: 12, paddingVertical: 12, alignItems: 'center' },
+  stepBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  stepIcon: { width: 28, color: colors.primary, fontWeight: '800', fontSize: 17 },
+  stepText: { flex: 1, color: colors.text, lineHeight: 19, fontSize: 13 },
 });
