@@ -6,6 +6,12 @@ import { colors } from '../../theme/colors';
 import { useApp } from '../../state/AppContext';
 import { getTrainingScoreboard, type TrainingScoreboard } from '../../services/codeforcesApi';
 
+function formatPenalty(seconds: number) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return hours > 0 ? \`\${hours}h \${minutes}min\` : \`\${minutes}min\`;
+}
+
 export default function TrainingScoreboardScreen() {
   const { sessionId: routeSessionId } = useLocalSearchParams<{ sessionId?: string }>();
   const { training } = useApp();
@@ -46,9 +52,11 @@ export default function TrainingScoreboardScreen() {
         </View>
       </View>
       <Text style={{ color: colors.text, fontSize: 23, fontWeight: '800' }}>{scoreboard?.title ?? 'Competição RankFlow'}</Text>
-      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 5, marginBottom: 14 }}>Pontuação baseada nas submissões públicas do Codeforces durante o treino, incluindo Accepted. Atualize manualmente para consultar os dados mais recentes.</Text>
-      {!sessionId ? <InfoBox>Crie um treino com cronômetro para acompanhar uma competição aqui. Os resultados antigos salvos localmente não representam uma sessão ao vivo.</InfoBox> : null}
-      {loading ? <InfoBox>Atualizando placar…</InfoBox> : null}
+      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 5, marginBottom: 14 }}>
+        Ranking baseado nas submissões públicas reais do Codeforces: mais problemas aceitos primeiro; em caso de empate, menor penalidade (tempo até o Accepted + 10 minutos por erro anterior).
+      </Text>
+      {!sessionId ? <InfoBox>Crie um treino com cronômetro para acompanhar uma competição aqui.</InfoBox> : null}
+      {loading ? <InfoBox>Atualizando placar com o Codeforces…</InfoBox> : null}
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       {scoreboard ? <>
         <Card>
@@ -61,9 +69,12 @@ export default function TrainingScoreboardScreen() {
             <Text style={{ color: colors.primary, fontSize: 19, fontWeight: '900', width: 24 }}>{index + 1}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ color: colors.text, fontWeight: '800' }}>{row.participant}</Text>
-              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{row.solved} resolvidos · {row.attempts} tentativas</Text>
+              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>{row.solved} problemas aceitos · {row.attempts} submissões</Text>
             </View>
-            <Text style={{ color: colors.text, fontSize: 17, fontWeight: '900' }}>{row.points} pts</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: colors.text, fontSize: 17, fontWeight: '900' }}>{formatPenalty(row.penaltySeconds)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 10 }}>penalidade</Text>
+            </View>
           </Card>
         ))}
         <Text style={{ color: colors.muted, fontSize: 10, marginTop: 10 }}>Atualizado em {new Date(scoreboard.serverNow).toLocaleTimeString('pt-BR')}</Text>
