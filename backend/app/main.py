@@ -380,17 +380,20 @@ async def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
                 "submittedAt": submitted_at.isoformat(),
             })
 
-    # A primeira submissão Accepted de cada problema concede os pontos.
+    all_attempts = payload["submissions"] + actual_attempts
+    # Cada participante pontua uma única vez por problema, mesmo se houver
+    # registro simulado e submissão real Accepted para o mesmo problema.
     accepted = set()
-    for attempt in sorted(actual_attempts, key=lambda item: item["submittedAt"]):
+    for attempt in sorted(all_attempts, key=lambda item: item.get("submittedAt") or ""):
         if attempt["verdict"] == "OK":
             key = (attempt["participant"], attempt["problemId"])
-            if key not in accepted:
-                problem = problem_by_id[key[1]]
-                attempt["points"] = 100 + int(problem.get("rating") or 0) // 10
+            if key in accepted:
+                attempt["points"] = 0
+            else:
+                if not attempt.get("points"):
+                    problem = problem_by_id.get(key[1], {})
+                    attempt["points"] = 100 + int(problem.get("rating") or 0) // 10
                 accepted.add(key)
-
-    all_attempts = payload["submissions"] + actual_attempts
     payload["submissions"] = all_attempts
     rows = []
     for handle in session.participants:
