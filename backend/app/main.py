@@ -95,8 +95,9 @@ async def user_rating(handle: str):
 async def user_status(
     handle: str,
     count: int = Query(1000, ge=1, le=1000),
+    refresh: bool = Query(False),
 ):
-    return await codeforces.status(handle, count)
+    return await codeforces.status(handle, count, refresh=refresh)
 
 
 @app.get("/api/codeforces/users/{handle}/summary")
