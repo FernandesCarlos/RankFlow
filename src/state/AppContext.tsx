@@ -8,6 +8,7 @@ import React, {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Training } from '../services/forms';
+import { clearAuthToken, getCurrentUser, getStoredToken } from '../services/auth';
 
 const initialNotifications = {
   allowed: true,
@@ -151,6 +152,24 @@ function useAppState() {
             setFriendHandles([...new Set(data.friendHandles.filter((item) => typeof item === 'string' && item.trim()))]);
           }
         }
+        const token = await getStoredToken();
+        if (token) {
+          try {
+            const user = await getCurrentUser(token);
+            setAuthenticated(true);
+            setProfile((current) => ({
+              ...current,
+              name: user.display_name || current.name,
+              firstName: (user.display_name || current.name).split(' ')[0],
+              email: user.email || current.email,
+              codeforcesHandle: user.codeforces_handle || current.codeforcesHandle,
+              rating: user.rating || current.rating,
+            }));
+          } catch {
+            await clearAuthToken();
+            setAuthenticated(false);
+          }
+        }
       } catch (error) {
         console.error('Erro ao carregar dados locais:', error);
       } finally {
@@ -195,6 +214,7 @@ function useAppState() {
   }
 
   function signOut() {
+    clearAuthToken().catch(() => undefined);
     setAuthenticated(false);
     setProfile({ ...defaultProfile });
     setNotifications(initialNotifications);
