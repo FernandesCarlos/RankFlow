@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -88,7 +90,7 @@ async def user_status(
 
 @app.get("/api/codeforces/users/{handle}/summary")
 async def user_summary(handle: str):
-    user, rating_history, solved = await __import__("asyncio").gather(
+    user, rating_history, solved = await asyncio.gather(
         codeforces.info(handle),
         codeforces.rating(handle),
         codeforces.solved_summary(handle),
