@@ -160,7 +160,7 @@ export async function checkCodeforcesVerificationSubmission(
     verdict?: string;
     problem: { contestId?: number; index: string };
   }[]>(
-    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/submissions?count=1000`
+    `/api/codeforces/users/${encodeURIComponent(handle.trim())}/submissions?count=1000&refresh=true`
   );
   return submissions.some((submission) => {
     const submittedContestId = submission.problem?.contestId ?? submission.contestId;
