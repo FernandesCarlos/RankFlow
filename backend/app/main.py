@@ -149,6 +149,34 @@ async def codeforces_problems(
         ]
     return {"problems": items[:limit], "total": len(items)}
 
+@app.get("/api/codeforces/problems/search")
+async def search_codeforces_problems(q: str = Query(..., min_length=1, max_length=120)):
+    term = q.strip().lower()
+    data = await codeforces.problems()
+    matches = []
+    for problem in data.get("problems", []):
+        contest_id = problem.get("contestId")
+        index = problem.get("index")
+        if contest_id is None or not index:
+            continue
+        problem_id = f"{contest_id}-{index}"
+        title = str(problem.get("name") or "")
+        if term in title.lower() or term == problem_id.lower() or term == f"{contest_id}{index}".lower():
+            tags = problem.get("tags") or []
+            matches.append({
+                "id": problem_id,
+                "contestId": contest_id,
+                "index": index,
+                "title": title,
+                "rating": problem.get("rating") or 0,
+                "tags": tags,
+                "tag": tags[0] if tags else "sem tag",
+                "url": f"https://codeforces.com/problemset/problem/{contest_id}/{index}",
+            })
+        if len(matches) >= 30:
+            break
+    return {"problems": matches, "total": len(matches)}
+
 
 @app.get("/api/codeforces/users/{handle}/solved")
 async def codeforces_solved(handle: str):
