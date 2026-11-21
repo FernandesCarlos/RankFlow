@@ -36,7 +36,8 @@
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
-      ]
+      ],
+      "package": "com.rankflow.app"
     },
     "ios": {
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -44,7 +45,8 @@
         "UIBackgroundModes": [
           "remote-notification"
         ]
-      }
+      },
+      "bundleIdentifier": "com.rankflow.app"
     }
   }
 }
