@@ -1,4 +1,4 @@
-import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging';
+import { AuthorizationStatus, getMessaging } from '@react-native-firebase/messaging';
 import { PermissionsAndroid, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { getStoredToken } from './auth';
@@ -29,6 +29,7 @@ async function saveTokenOnBackend(token: string): Promise<void> {
 }
 
 async function requestNotificationPermission(): Promise<void> {
+  const messagingInstance = getMessaging();
   if (Platform.OS === 'android') {
     if (Number(Platform.Version) >= 33) {
       const permission = await PermissionsAndroid.request(
@@ -51,11 +52,11 @@ async function requestNotificationPermission(): Promise<void> {
     throw new Error('Notificações push estão disponíveis somente no Android e iOS.');
   }
 
-  if (!messaging().isDeviceRegisteredForRemoteMessages) {
-    await messaging().registerDeviceForRemoteMessages();
+  if (!messagingInstance.isDeviceRegisteredForRemoteMessages) {
+    await messagingInstance.registerDeviceForRemoteMessages();
   }
 
-  const authorization = await messaging().requestPermission();
+  const authorization = await messagingInstance.requestPermission();
   const enabled =
     authorization === AuthorizationStatus.AUTHORIZED ||
     authorization === AuthorizationStatus.PROVISIONAL;
@@ -67,13 +68,13 @@ async function requestNotificationPermission(): Promise<void> {
 export async function registerPushNotifications(): Promise<void> {
   await requestNotificationPermission();
 
-  const token = await messaging().getToken();
+  const token = await getMessaging().getToken();
   if (!token) throw new Error('O Firebase não forneceu um token para este dispositivo.');
   await saveTokenOnBackend(token);
 }
 
 export function listenForPushTokenRefresh(): () => void {
-  return messaging().onTokenRefresh((token) => {
+  return getMessaging().onTokenRefresh((token: string) => {
     saveTokenOnBackend(token).catch((error) => {
       console.warn('Não foi possível atualizar o token FCM no backend:', error);
     });
@@ -82,12 +83,13 @@ export function listenForPushTokenRefresh(): () => void {
 
 export async function unregisterPushNotifications(): Promise<void> {
   const authToken = await getStoredToken();
+  const messagingInstance = getMessaging();
   let fcmToken = await SecureStore.getItemAsync(FCM_TOKEN_KEY);
 
   // Recupera o token caso a instalação tenha sido registrada antes da persistência segura.
   if (!fcmToken) {
     try {
-      fcmToken = await messaging().getToken();
+      fcmToken = await messagingInstance.getToken();
     } catch {
       fcmToken = null;
     }
@@ -108,6 +110,6 @@ export async function unregisterPushNotifications(): Promise<void> {
     }
   }
 
-  await messaging().deleteToken();
+  await messagingInstance.deleteToken();
   await SecureStore.deleteItemAsync(FCM_TOKEN_KEY);
 }
