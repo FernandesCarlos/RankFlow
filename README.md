@@ -89,7 +89,7 @@ As telas Início, Estatísticas, Amigos e Placar usam esses dados. O número de 
 
 Na tela Amigos, o usuário cadastra handles manualmente. A lista fica persistida localmente via AsyncStorage. O ranking é ordenado por rating decrescente e, em caso de empate, por problemas resolvidos. O placar de treinos RankFlow permanece separado.
 
-## Documentação
+## Testes\n\nExecute na raiz do projeto:\n\n```bash\nnpm test\n```\n\nO comando verifica os tipos TypeScript e executa a suíte Jest em `tests/`. Os testes iniciais cobrem as validações de e-mail, perfil e cadastro.\n\n## Documentação
 
 - [Proposta do projeto](docs/proposta.md)
 - [Etapa 03 — UX e navegação](docs/etapa-03.md)
