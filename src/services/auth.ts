@@ -11,6 +11,7 @@ export type AuthUser = {
   codeforces_handle: string | null;
   avatar_url: string | null;
   rating: number | null;
+  public_profile?: boolean;
 };
 
 type AuthResponse = {
