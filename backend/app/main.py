@@ -1,6 +1,11 @@
 import asyncio
+import logging
+from io import BytesIO
+from pathlib import Path
 
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Request
+from fastapi.staticfiles import StaticFiles
+from PIL import Image, ImageOps, UnidentifiedImageError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -11,10 +16,13 @@ from sqlalchemy import text
 import uuid
 
 from app.core import settings
-from app.database import Base, engine, get_db
-from app.models import User, TrainingSession
+from app.database import Base, engine, get_db, SessionLocal
+from app.models import User, TrainingSession, PushDevice, TrainingReminder
 from app import codeforces
 from app.auth import router as auth_router
+from app.notifications import send_fcm_message
+
+logger = logging.getLogger('rankflow.notifications')
 
 cfg = settings()
 Base.metadata.create_all(bind=engine)
@@ -24,8 +32,13 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(256)"))
     connection.execute(text("ALTER TABLE users ALTER COLUMN codeforces_handle DROP NOT NULL"))
     connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS public_profile BOOLEAN NOT NULL DEFAULT TRUE"))
 
-app = FastAPI(title="RankFlow API", version="0.6.0")
+UPLOAD_DIR = Path(cfg.upload_dir)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app = FastAPI(title="RankFlow API", version="0.7.0")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.add_middleware(
     SessionMiddleware,
     secret_key=cfg.session_secret,
