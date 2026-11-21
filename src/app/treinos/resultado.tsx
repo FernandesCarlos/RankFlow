@@ -125,7 +125,7 @@ export default function ResultadoScreen() {
       `Problemas aceitos: ${myRanking.solved}`,
       `Penalidade: ${formatPenalty(myRanking.penaltySeconds)}`,
       profileUrl ? `Perfil: ${profileUrl}` : '',
-    ].filter(Boolean).join('\\n');
+    ].filter(Boolean).join('\n');
   }
 
   async function shareAsText() {
