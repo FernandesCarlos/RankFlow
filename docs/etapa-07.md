@@ -78,7 +78,7 @@ Fluxo:
 
 **Permissões e credenciais:**
 
-- **Android 13 ou superior:** permissão de notificações `POST_NOTIFICATIONS), solicitada pelo sistema em tempo de execução. A configuração nativa declara essa permissão.
+- **Android 13 ou superior:** permissão de notificações `POST_NOTIFICATIONS`,  solicitada pelo sistema em tempo de execução. A configuração nativa declara essa permissão.
 - **iOS:** autorização do usuário para alertas, sons e notificações; o app precisa de entitlement APNs compatível com o tipo de build.
 - **Firebase Android/iOS:** os arquivos de configuração do aplicativo (`google-services.json` e `GoogleService-Info.plist`) precisam corresponder aos identificadores cadastrados no Firebase.
 - **Backend:** a chave JSON da conta de serviço Firebase é usada exclusivamente pelo Firebase Admin SDK no servidor. Ela nunca deve ser incluída no aplicativo nem commitada no Git.
@@ -128,12 +128,12 @@ Fluxo:
    - `UPLOAD_DIR=/app/uploads`.
    - `FIREBASE_PROJECT_ID`: ID do projeto Firebase.
    - `FCM_SERVICE_ACCOUNT_FILE=/run/secrets/firebase-adminsdk.json`.
-3. Crie `backend/secrets/` e coloque a chave JSON da conta de serviço Firebase em `backend/secrets/firebase-adminsdk.json). Não compartilhe nem versione esse arquivo.
+3. Crie `backend/secrets/` e coloque a chave JSON da conta de serviço Firebase em `backend/secrets/firebase-adminsdk.json`.  Não compartilhe nem versione esse arquivo.
 4. Inicie os serviços:
    ```bash
    docker compose up --build
    ```
-5. Verifique `/health) e a documentação em `/docs).
+5. Verifique `/health` e a documentação em `/docs`. 
 
 O Docker Compose mantém os uploads no volume `rankflow-media` e monta a pasta `backend/secrets` somente para leitura.
 
@@ -144,7 +144,7 @@ O FCM via React Native Firebase usa módulos nativos; **não funciona no Expo Go
 1. Crie um projeto no Firebase e cadastre os aplicativos Android e iOS com os identificadores correspondentes ao app Expo.
 2. Baixe `google-services.json` para a raiz do projeto e `GoogleService-Info.plist` para a raiz do projeto.
 3. No Firebase Console, configure Cloud Messaging. Para iOS, associe também a chave/certificado APNs ao app iOS no Firebase.
-4. Confira os identificadores Android/iOS em `app.json) e mantenha-os iguais aos cadastrados no Firebase.
+4. Confira os identificadores Android/iOS em `app.json` e mantenha-os iguais aos cadastrados no Firebase.
 5. Instale dependências e gere os projetos nativos:
    ```bash
    npm install
@@ -160,7 +160,7 @@ O FCM via React Native Firebase usa módulos nativos; **não funciona no Expo Go
    npx expo run:ios
    npx expo start --dev-client
    ```
-7. Configure `EXPO_PUBLIC_API_URL` no arquivo `.env) da raiz para apontar ao backend. Em um celular físico, use o IP acessível do computador ou um domínio HTTPS, não `localhost) do próprio telefone.
+7. Configure `EXPO_PUBLIC_API_URL` no arquivo `.env` da raiz para apontar ao backend. Em um celular físico, use o IP acessível do computador ou um domínio HTTPS, não `localhost` do próprio telefone.
 
 Os arquivos de configuração nativos e as chaves de serviço estão no `.gitignore). Cada desenvolvedor/ambiente deve obtê-los no Firebase Console ou no gerenciador seguro de segredos.
 
@@ -171,7 +171,7 @@ Os arquivos de configuração nativos e as chaves de serviço estão no `.gitign
 1. Entre na conta e navegue entre Início, Perfil, Treino e Placar.
 2. Altere a foto de perfil e confirme que a mesma imagem aparece nos avatares das outras telas.
 3. Reinicie o app e confirme que preferências, perfil local e dados de treino persistidos foram recuperados.
-4. Altere a visibilidade do perfil e consulte `GET /api/users/public/{handle}): perfil público retorna dados básicos/avatar; perfil privado retorna 404.
+4. Altere a visibilidade do perfil e consulte `GET /api/users/public/{handle}`: perfil público retorna dados básicos/avatar; perfil privado retorna 404.
 
 ### Galeria
 
@@ -184,8 +184,8 @@ Os arquivos de configuração nativos e as chaves de serviço estão no `.gitign
 
 1. Execute um development build em dispositivo/emulador configurado no Firebase; Expo Go não serve para este teste.
 2. Entre na conta, abra Configurações → Notificações e ative a opção geral.
-3. Confirme no backend que o dispositivo foi registrado em `push_devices).
-4. Crie um treino com início em aproximadamente 15 minutos e confira a linha pendente em `training_reminders).
+3. Confirme no backend que o dispositivo foi registrado em `push_devices`.
+4. Crie um treino com início em aproximadamente 15 minutos e confira a linha pendente em `training_reminders`.
 5. Mantenha o backend ativo e aguarde a notificação. Teste Android e iOS separadamente; no iOS confirme APNs.
 6. Desative a opção geral e verifique que os tokens daquela conta foram removidos.
 
