@@ -1,5 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Linking, ScrollView, Share, Text, View } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   Card, Header, InfoBox, OutlineButton, PrimaryButton, Screen, SectionTitle,
@@ -33,7 +35,7 @@ function formatPenalty(seconds: number) {
 
 export default function ResultadoScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { training: currentTraining, trainingHistory, completedTrainingId, completeTraining } = useApp();
+  const { training: currentTraining, trainingHistory, completedTrainingId, completeTraining, profile, setNotice } = useApp();
   const completed = trainingHistory.find((item) => item.id === (id ?? completedTrainingId));
   const training = id ? completed : currentTraining;
   const [session, setSession] = useState<TrainingSession | null>(null);
@@ -41,6 +43,8 @@ export default function ResultadoScreen() {
   const [remaining, setRemaining] = useState('—');
   const [error, setError] = useState('');
   const [scoreboardLoading, setScoreboardLoading] = useState(false);
+  const [sharingResult, setSharingResult] = useState(false);
+  const shareCardRef = useRef<View | null>(null);
 
   const refreshSession = useCallback(async () => {
     if (!training?.sessionId) return;
@@ -101,6 +105,67 @@ export default function ResultadoScreen() {
     return scoreboard?.problemResults.find(
       (item) => item.participant === participant && item.problemId === problemId,
     );
+  }
+
+  const myRankingIndex = scoreboard?.ranking.findIndex(
+    (row) => row.participant.toLowerCase() === profile.codeforcesHandle.trim().toLowerCase(),
+  ) ?? -1;
+  const myRanking = myRankingIndex >= 0 ? scoreboard?.ranking[myRankingIndex] : null;
+
+  function buildShareSummary() {
+    if (!myRanking || !training) {
+      throw new Error('Seu usuário precisa estar entre os participantes para compartilhar o resultado.');
+    }
+    const profileUrl = profile.codeforcesHandle
+      ? `https://codeforces.com/profile/${encodeURIComponent(profile.codeforcesHandle)}`
+      : '';
+    return [
+      `RankFlow • ${session?.title ?? 'Resultado do treino'}`,
+      `Colocação: ${myRankingIndex + 1}º lugar`,
+      `Problemas aceitos: ${myRanking.solved}`,
+      `Penalidade: ${formatPenalty(myRanking.penaltySeconds)}`,
+      profileUrl ? `Perfil: ${profileUrl}` : '',
+    ].filter(Boolean).join('\\n');
+  }
+
+  async function shareAsText() {
+    try {
+      await Share.share({
+        title: 'Meu resultado no RankFlow',
+        message: buildShareSummary(),
+      });
+    } catch (err) {
+      setNotice({
+        message: err instanceof Error ? err.message : 'Não foi possível abrir o compartilhamento.',
+        tone: 'danger',
+      });
+    }
+  }
+
+  async function shareAsImage() {
+    if (!myRanking || !shareCardRef.current) return;
+    setSharingResult(true);
+    try {
+      const imageUri = await captureRef(shareCardRef, {
+        format: 'png',
+        quality: 0.95,
+        result: 'tmpfile',
+      });
+      if (!(await Sharing.isAvailableAsync())) {
+        throw new Error('O compartilhamento de imagens não está disponível neste dispositivo.');
+      }
+      await Sharing.shareAsync(imageUri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Compartilhar resultado do RankFlow',
+      });
+    } catch (err) {
+      setNotice({
+        message: err instanceof Error ? err.message : 'Não foi possível gerar ou compartilhar o card.',
+        tone: 'danger',
+      });
+    } finally {
+      setSharingResult(false);
+    }
   }
 
   return (
@@ -212,6 +277,56 @@ export default function ResultadoScreen() {
         {!completed && !id && session?.status === 'finished' ? <OutlineButton title="Salvar treino concluído no histórico" onPress={completeTraining} /> : null}
         <OutlineButton title="Atualizar submissões" onPress={refreshScoreboard} loading={scoreboardLoading} />
         <OutlineButton title="Atualizar cronômetro" onPress={refreshSession} />
+
+        <SectionTitle>Compartilhar resultado</SectionTitle>
+        <OutlineButton
+          title="Compartilhar como texto e link"
+          onPress={shareAsText}
+          disabled={!myRanking || sharingResult}
+        />
+        <PrimaryButton
+          title={sharingResult ? 'Gerando imagem...' : 'Compartilhar card como imagem'}
+          onPress={shareAsImage}
+          loading={sharingResult}
+          disabled={!myRanking || sharingResult}
+        />
+        {!myRanking && scoreboard ? (
+          <InfoBox>Para compartilhar, o handle do seu perfil deve estar entre os participantes deste treino.</InfoBox>
+        ) : null}
+
+        <View
+          ref={shareCardRef}
+          collapsable={false}
+          style={{
+            position: 'absolute',
+            left: -10000,
+            top: 0,
+            width: 320,
+            padding: 24,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: '900', fontSize: 13, letterSpacing: 2 }}>RANKFLOW</Text>
+          <Text style={{ color: colors.text, fontWeight: '900', fontSize: 24, marginTop: 18 }}>Resultado do treino</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, marginTop: 5 }}>{session?.title ?? 'Treino de programação competitiva'}</Text>
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 18 }} />
+          <Text style={{ color: colors.primary, fontSize: 34, fontWeight: '900' }}>{myRanking ? `#${myRankingIndex + 1}` : '—'}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>COLOCAÇÃO</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
+            <View>
+              <Text style={{ color: colors.text, fontWeight: '900', fontSize: 24 }}>{myRanking?.solved ?? 0}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12 }}>Problemas aceitos</Text>
+            </View>
+            <View>
+              <Text style={{ color: colors.text, fontWeight: '900', fontSize: 20 }}>{myRanking ? formatPenalty(myRanking.penaltySeconds) : '—'}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12 }}>Penalidade</Text>
+            </View>
+          </View>
+          <Text style={{ color: colors.primary, fontWeight: '700', marginTop: 25 }}>@{profile.codeforcesHandle || profile.username}</Text>
+        </View>
         <PrimaryButton title="Voltar ao início" onPress={() => router.dismissTo('/(tabs)')} />
       </>}
     </Screen>
