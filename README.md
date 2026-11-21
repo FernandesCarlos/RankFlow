@@ -10,7 +10,11 @@ Aplicativo mobile para programação competitiva, desenvolvido com React Native,
 - Cadastro local de amigos por handle público do Codeforces.
 - Ranking dos amigos por rating e, em caso de empate, problemas resolvidos.
 - Placar separado para sessões de treino criadas no RankFlow.
-- Criação de treinos personalizados.
+- Criação e agendamento de treinos personalizados.
+- Estado global compartilhado entre telas via React Context API.
+- Foto de perfil selecionada na galeria e sincronizada com a conta.
+- Notificações push FCM para lembrar o início de treinos agendados.
+- Compartilhamento nativo de resultados em texto/link ou card PNG.
 
 ## Tecnologias
 
@@ -18,7 +22,9 @@ Aplicativo mobile para programação competitiva, desenvolvido com React Native,
 - Backend: Python, FastAPI, SQLAlchemy e HTTPX.
 - Banco de dados: PostgreSQL 16.
 - Serviço externo: API pública do Codeforces.
-- Persistência local: AsyncStorage.
+- Estado não sensível: AsyncStorage e React Context API.
+- Token JWT: Expo SecureStore (Keychain/Keystore).
+- Recursos nativos: Expo Image Picker, React Native Firebase Messaging, React Native Share, Expo Sharing e View Shot.
 - Docker Compose para execução local.
 
 ## Estrutura
@@ -58,10 +64,13 @@ RankFlow/
    npm install
    ```
 2. Copie `.env.example` para `.env` na raiz e configure `EXPO_PUBLIC_API_URL` com a URL acessível do backend. Para simulador no mesmo computador, use `http://localhost:8000`. Em dispositivo físico, use o IP local do computador.
-3. Inicie o Expo:
+3. Para funcionalidades FCM, configure primeiro o Firebase conforme [Etapa 07](docs/etapa-07.md) e gere um development build (o Expo Go não inclui os módulos nativos do Firebase):
    ```bash
-   npx expo start
+   npx expo prebuild --clean
+   npx expo run:android
+   npx expo start --dev-client
    ```
+   Para desenvolvimento sem FCM, o Expo pode ser iniciado com `npx expo start`.
 
 ## Integração Codeforces
 
@@ -86,7 +95,8 @@ Na tela Amigos, o usuário cadastra handles manualmente. A lista fica persistida
 - [Etapa 03 — UX e navegação](docs/etapa-03.md)
 - [Etapa 04 — Persistência local](docs/etapa-04.md)
 - [Etapa 06 — Integração com API externa](docs/etapa-06.md)
+- [Etapa 07 — Estado global e recursos nativos](docs/etapa-07.md)
 
 ## Estado atual
 
-A integração de consulta Codeforces está implementada no backend e conectada às telas principais. O fluxo de autenticação OIDC e a integração mobile completa ainda dependem de configuração e finalização próprias. A lista de amigos é local ao dispositivo nesta versão.
+A integração de consulta Codeforces está conectada às telas principais. A Etapa 07 adiciona galeria sincronizada, perfil público, FCM e compartilhamento nativo. A execução dessas integrações exige configurar as credenciais do Firebase e gerar um development build; os arquivos de credenciais não são versionados. A lista de amigos continua armazenada localmente nesta versão.
