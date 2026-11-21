@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
@@ -52,6 +53,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+if cfg.app_env == "production":
+    app.add_middleware(HTTPSRedirectMiddleware)
 app.include_router(auth_router, prefix="/api")
 
 bearer = HTTPBearer()
