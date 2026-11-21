@@ -4,9 +4,31 @@ import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider, useApp } from '../state/AppContext';
+import { listenForPushTokenRefresh, registerPushNotifications } from '../services/pushNotifications';
 
 function Navigation() {
-  const { authenticated } = useApp();
+  const { authenticated, notifications, setNotifications, setNotice } = useApp();
+  const pushAllowed = notifications.allowed;
+
+  useEffect(() => {
+    if (!authenticated || !pushAllowed) return;
+    let active = true;
+    const unsubscribeTokenRefresh = listenForPushTokenRefresh();
+
+    registerPushNotifications().catch((error) => {
+      if (!active) return;
+      setNotifications((current) => ({ ...current, allowed: false }));
+      setNotice({
+        message: error instanceof Error ? error.message : 'Não foi possível ativar as notificações push.',
+        tone: 'danger',
+      });
+    });
+
+    return () => {
+      active = false;
+      unsubscribeTokenRefresh();
+    };
+  }, [authenticated, pushAllowed, setNotifications, setNotice]);
 
   useEffect(() => {
     const unsubscribeForeground = messaging().onMessage(async (message) => {
