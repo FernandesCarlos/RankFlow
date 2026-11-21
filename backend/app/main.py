@@ -310,7 +310,11 @@ def _session_payload(session: TrainingSession, db: Session):
 
 
 @app.post("/api/trainings")
-def create_training_session(payload: dict, db: Session = Depends(get_db)):
+def create_training_session(
+    payload: dict,
+    db: Session = Depends(get_db),
+    authenticated_user: User = Depends(current_user),
+):
     creator = str(payload.get("creatorHandle", "")).strip()
     participants = list(dict.fromkeys(str(x).strip() for x in payload.get("participants", []) if str(x).strip()))
     problems = payload.get("problems", [])
@@ -358,15 +362,27 @@ def create_training_session(payload: dict, db: Session = Depends(get_db)):
     if starts_at > now:
         reminder_at = max(starts_at - timedelta(minutes=15), now)
         reminders = []
+        reminder_user_ids = set()
+
+        # O criador recebe o lembrete mesmo se ainda não vinculou o handle ao cadastro.
+        reminders.append(TrainingReminder(
+            session_id=session.id,
+            user_id=authenticated_user.id,
+            scheduled_for=reminder_at,
+            status="pending",
+        ))
+        reminder_user_ids.add(authenticated_user.id)
+
         for handle in participants:
             participant_user = db.query(User).filter(User.codeforces_handle == handle).first()
-            if participant_user:
+            if participant_user and participant_user.id not in reminder_user_ids:
                 reminders.append(TrainingReminder(
                     session_id=session.id,
                     user_id=participant_user.id,
                     scheduled_for=reminder_at,
                     status="pending",
                 ))
+                reminder_user_ids.add(participant_user.id)
         if reminders:
             db.add_all(reminders)
             db.commit()
@@ -592,13 +608,24 @@ def _dispatch_due_training_reminders():
                 db.commit()
                 continue
 
+            started_at = session.started_at
+            if started_at.tzinfo is None:
+                started_at = started_at.replace(tzinfo=timezone.utc)
+            seconds_until_start = int((started_at - datetime.now(timezone.utc)).total_seconds())
+            if seconds_until_start <= 0:
+                reminder.status = "skipped"
+                reminder.last_error = "O horário de início já passou."
+                db.commit()
+                continue
+            minutes_until_start = max(1, (seconds_until_start + 59) // 60)
+
             sent = 0
             errors = []
             for device in devices:
                 try:
                     send_fcm_message(
                         device.token,
-                        "Seu treino começa em 15 minutos!",
+                        f"Seu treino começa em {minutes_until_start} minutos!",
                         session.title,
                         {
                             "type": "training_reminder",
