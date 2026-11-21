@@ -1,7 +1,7 @@
 import { ToggleRow as Toggle } from '../../components/ToggleRow';
 import { useApp } from '../../state/AppContext';
 import { goBack } from '../../navigation/actions';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   Card,
@@ -10,47 +10,27 @@ import {
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
-import { listenForPushTokenRefresh, registerPushNotifications, unregisterPushNotifications } from '../../services/pushNotifications';
+import { unregisterPushNotifications } from '../../services/pushNotifications';
 
 export default function NotificacoesScreen() {
   const { notifications, setNotifications, setNotice } = useApp();
   const { allowed, weekly, contest, score, result, friends, invites, quiet } = notifications;
-  useEffect(() => {
-    if (!allowed) return;
-    let active = true;
-    registerPushNotifications().then(() => {
-      if (active) setNotice({ message: 'Notificações push ativadas neste dispositivo.', tone: 'success' });
-    }).catch((error) => {
-      if (active) {
-        setNotifications(current => ({ ...current, allowed: false }));
-        setNotice({
-          message: error instanceof Error ? error.message : 'Não foi possível ativar as notificações push.',
-          tone: 'danger',
-        });
-      }
-    });
-    const unsubscribe = listenForPushTokenRefresh();
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [allowed]);
-
   const update = async (key: keyof typeof notifications, value: boolean) => {
     if (key === 'allowed') {
       if (value) {
         setNotifications(current => ({ ...current, allowed: true }));
-      } else {
+        return;
+      }
+
+      try {
+        await unregisterPushNotifications();
         setNotifications(current => ({ ...current, allowed: false }));
-        try {
-          await unregisterPushNotifications();
-          setNotice({ message: 'Notificações desativadas neste dispositivo.', tone: 'info' });
-        } catch (error) {
-          setNotice({
-            message: error instanceof Error ? error.message : 'Não foi possível remover o registro FCM.',
-            tone: 'danger',
-          });
-        }
+        setNotice({ message: 'Notificações desativadas neste dispositivo.', tone: 'info' });
+      } catch (error) {
+        setNotice({
+          message: error instanceof Error ? error.message : 'Não foi possível remover o registro FCM.',
+          tone: 'danger',
+        });
       }
       return;
     }
