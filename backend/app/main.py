@@ -677,6 +677,21 @@ async def _reminder_worker():
 
 @app.on_event("startup")
 async def start_reminder_worker():
+    # Recupera lembretes interrompidos por reinício do processo antes do envio.
+    def recover_interrupted_reminders():
+        db = SessionLocal()
+        try:
+            db.query(TrainingReminder).filter(
+                TrainingReminder.status == "sending"
+            ).update(
+                {TrainingReminder.status: "pending"},
+                synchronize_session=False,
+            )
+            db.commit()
+        finally:
+            db.close()
+
+    await asyncio.to_thread(recover_interrupted_reminders)
     app.state.reminder_worker = asyncio.create_task(_reminder_worker())
 
 
