@@ -1,7 +1,7 @@
 import { Stack, router } from 'expo-router';
 import { useEffect } from 'react';
 import { Alert } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging } from '@react-native-firebase/messaging';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider, useApp } from '../state/AppContext';
 import { listenForPushTokenRefresh, registerPushNotifications } from '../services/pushNotifications';
@@ -31,15 +31,16 @@ function Navigation() {
   }, [authenticated, pushAllowed, setNotifications, setNotice]);
 
   useEffect(() => {
-    const unsubscribeForeground = messaging().onMessage(async (message) => {
+    const messagingInstance = getMessaging();
+    const unsubscribeForeground = messagingInstance.onMessage(async (message) => {
       const title = message.notification?.title ?? 'RankFlow';
       const body = message.notification?.body ?? 'Você recebeu uma nova notificação.';
       Alert.alert(title, body);
     });
-    const unsubscribeOpened = messaging().onNotificationOpenedApp(() => {
+    const unsubscribeOpened = messagingInstance.onNotificationOpenedApp(() => {
       if (authenticated) router.push('/(tabs)/treino');
     });
-    messaging().getInitialNotification().then((message) => {
+    messagingInstance.getInitialNotification().then((message) => {
       if (message && authenticated) router.push('/(tabs)/treino');
     }).catch(() => undefined);
 
