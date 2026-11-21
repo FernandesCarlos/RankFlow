@@ -28,3 +28,6 @@ backend/.env
 backend/secrets/*.json
 backend/firebase-service-account.json
 backend/uploads/
+# Firebase native configuration (downloaded from Firebase Console)
+/google-services.json
+/GoogleService-Info.plist
