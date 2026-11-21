@@ -573,10 +573,18 @@ def register_push_device(payload: dict, user: User = Depends(current_user), db: 
 
 
 @app.delete("/api/push/register")
-def unregister_push_devices(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    db.query(PushDevice).filter(PushDevice.user_id == user.id).delete(synchronize_session=False)
+def unregister_push_device(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    token = str(payload.get("token", "")).strip()
+    if not token or len(token) > 4096:
+        raise HTTPException(422, "Token FCM inválido.")
+
+    removed = (
+        db.query(PushDevice)
+        .filter(PushDevice.user_id == user.id, PushDevice.token == token)
+        .delete(synchronize_session=False)
+    )
     db.commit()
-    return {"registered": False}
+    return {"registered": False, "removed": removed}
 
 
 def _dispatch_due_training_reminders():
@@ -628,8 +636,8 @@ def _dispatch_due_training_reminders():
                 try:
                     send_fcm_message(
                         device.token,
-                        f"Seu treino começa em {minutes_until_start} minutos!",
                         session.title,
+                        f"Seu treino começa em {minutes_until_start} minutos!",
                         {
                             "type": "training_reminder",
                             "sessionId": session.id,
@@ -640,7 +648,14 @@ def _dispatch_due_training_reminders():
                 except Exception as exc:
                     errors.append(str(exc)[:500])
                     message = str(exc).lower()
-                    if "registration-token-not-registered" in message or "unregistered" in message:
+                    error_code = str(getattr(exc, "code", "")).lower()
+                    if (
+                        error_code in {
+                            "messaging/registration-token-not-registered",
+                            "messaging/invalid-registration-token",
+                        }
+                        or "registration-token-not-registered" in message
+                    ):
                         db.delete(device)
 
             reminder.status = "sent" if sent else "failed"
