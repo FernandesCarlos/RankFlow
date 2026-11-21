@@ -2,7 +2,7 @@ import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging
 import { Platform } from 'react-native';
 import { getStoredToken } from './auth';
 
-const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\\/+$/, '');
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 async function saveTokenOnBackend(token: string): Promise<void> {
   const authToken = await getStoredToken();
