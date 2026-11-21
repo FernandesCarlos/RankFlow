@@ -58,6 +58,7 @@ def _user_payload(user: User):
         "codeforces_handle": user.codeforces_handle,
         "avatar_url": user.avatar_url,
         "rating": user.rating,
+        "public_profile": user.public_profile,
     }
 
 
