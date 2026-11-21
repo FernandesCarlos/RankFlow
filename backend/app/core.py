@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     codeforces_callback_url: str = "http://localhost:8000/api/auth/codeforces/callback"
     mobile_redirect_uri: str = "rankflow://auth/callback"
     cors_origins: str = "http://localhost:8081"
-    public_api_url: str = "http://localhost:8000"
+    public_api_url: str = ""
     upload_dir: str = "/app/uploads"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     @property
