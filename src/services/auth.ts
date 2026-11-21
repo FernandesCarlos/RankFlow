@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const TOKEN_KEY = '@rankflow:access-token:v1';
@@ -34,7 +35,9 @@ async function authRequest(path: string, body: Record<string, string>): Promise<
     throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'Não foi possível autenticar.');
   }
   const result = payload as AuthResponse;
-  await AsyncStorage.setItem(TOKEN_KEY, result.access_token);
+  await SecureStore.setItemAsync(TOKEN_KEY, result.access_token, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
   return result;
 }
 
@@ -47,10 +50,23 @@ export function loginAccount(input: { email: string; password: string }) {
 }
 
 export async function getStoredToken() {
-  return AsyncStorage.getItem(TOKEN_KEY);
+  const secureToken = await SecureStore.getItemAsync(TOKEN_KEY);
+  if (secureToken) return secureToken;
+
+  // Migra tokens de versões antigas que eram salvos em texto simples.
+  const legacyToken = await AsyncStorage.getItem(TOKEN_KEY);
+  if (legacyToken) {
+    await SecureStore.setItemAsync(TOKEN_KEY, legacyToken, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    });
+    await AsyncStorage.removeItem(TOKEN_KEY);
+    return legacyToken;
+  }
+  return null;
 }
 
 export async function clearAuthToken() {
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
   await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
