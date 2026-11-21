@@ -44,7 +44,7 @@ export default function PlacarScreen() {
 
   return (
     <Screen>
-      <Header title="Placar" subtitle="Ranking dos amigos cadastrados" right={<Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}><Avatar initials={profile.initials} size={38} /></Pressable>} />
+      <Header title="Placar" subtitle="Ranking dos amigos cadastrados" right={<Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}><Avatar initials={profile.initials} uri={profile.avatarUrl} size={38} /></Pressable>} />
       <Text style={styles.title}>Ranking de amigos</Text>
       <Text style={styles.subtitle}>Primeiro por rating; em caso de empate, por problemas resolvidos.</Text>
       <Pressable accessibilityRole="button" accessibilityLabel="Atualizar ranking de amigos" onPress={refresh} style={styles.refresh}><Text style={styles.refreshText}>↻ Atualizar dados</Text></Pressable>
