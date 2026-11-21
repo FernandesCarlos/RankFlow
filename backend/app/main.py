@@ -91,7 +91,67 @@ def me(user: User = Depends(current_user)):
         "display_name": user.display_name,
         "avatar_url": user.avatar_url,
         "rating": user.rating,
+        "public_profile": user.public_profile,
     }
+
+
+@app.get("/api/users/public/{handle}")
+def public_user_profile(handle: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.codeforces_handle == handle).first()
+    if not user or not user.public_profile:
+        raise HTTPException(404, "Perfil público não encontrado.")
+    return {
+        "display_name": user.display_name,
+        "codeforces_handle": user.codeforces_handle,
+        "avatar_url": user.avatar_url,
+        "rating": user.rating,
+    }
+
+
+@app.put("/api/users/me/profile-visibility")
+def update_profile_visibility(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    is_public = payload.get("is_public")
+    if not isinstance(is_public, bool):
+        raise HTTPException(422, "Informe is_public como booleano.")
+    user.public_profile = is_public
+    db.commit()
+    return {"public_profile": user.public_profile}
+
+
+@app.post("/api/users/me/avatar")
+async def upload_profile_avatar(
+    request: Request,
+    image: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(415, "Envie uma imagem JPEG, PNG ou WebP.")
+    raw = await image.read(5 * 1024 * 1024 + 1)
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(413, "A imagem deve ter no máximo 5 MB.")
+    try:
+        with Image.open(BytesIO(raw)) as source:
+            if source.format not in {"JPEG", "PNG", "WEBP"}:
+                raise HTTPException(415, "Formato de imagem não suportado.")
+            source.verify()
+        with Image.open(BytesIO(raw)) as source:
+            normalized = ImageOps.exif_transpose(source).convert("RGB")
+            normalized.thumbnail((1024, 1024))
+            output = BytesIO()
+            normalized.save(output, format="JPEG", quality=86, optimize=True)
+    except HTTPException:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise HTTPException(422, "O arquivo enviado não é uma imagem válida.")
+
+    target = UPLOAD_DIR / "avatars" / (user.id + ".jpg")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(output.getvalue())
+    base_url = (cfg.public_api_url or str(request.base_url)).rstrip("/")
+    user.avatar_url = base_url + "/uploads/avatars/" + user.id + ".jpg"
+    db.commit()
+    return {"avatar_url": user.avatar_url}
 
 
 @app.get("/api/codeforces/users/{handle}")
