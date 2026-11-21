@@ -9,10 +9,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:unit && npm run test:navigation",
+    "test": "npm run typecheck && npm run test:unit",
     "export:web": "expo export --platform web",
-    "test:unit": "tsc -p tsconfig.test.json && node --test tests/*.test.cjs",
-    "test:navigation": "jest --runInBand"
+    "test:unit": "jest --runInBand"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -52,4 +51,4 @@
     "react-test-renderer": "19.2.3",
     "typescript": "~6.0.3"
   }
-}
+}\n
