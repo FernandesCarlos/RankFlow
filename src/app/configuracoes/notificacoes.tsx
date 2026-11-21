@@ -18,7 +18,9 @@ export default function NotificacoesScreen() {
   useEffect(() => {
     if (!allowed) return;
     let active = true;
-    registerPushNotifications().catch((error) => {
+    registerPushNotifications().then(() => {
+      if (active) setNotice({ message: 'Notificações push ativadas neste dispositivo.', tone: 'success' });
+    }).catch((error) => {
       if (active) {
         setNotifications(current => ({ ...current, allowed: false }));
         setNotice({
@@ -32,22 +34,12 @@ export default function NotificacoesScreen() {
       active = false;
       unsubscribe();
     };
-  }, []);
+  }, [allowed]);
 
   const update = async (key: keyof typeof notifications, value: boolean) => {
     if (key === 'allowed') {
       if (value) {
-        try {
-          await registerPushNotifications();
-          setNotifications(current => ({ ...current, allowed: true }));
-          setNotice({ message: 'Notificações push ativadas neste dispositivo.', tone: 'success' });
-        } catch (error) {
-          setNotifications(current => ({ ...current, allowed: false }));
-          setNotice({
-            message: error instanceof Error ? error.message : 'Não foi possível ativar as notificações.',
-            tone: 'danger',
-          });
-        }
+        setNotifications(current => ({ ...current, allowed: true }));
       } else {
         setNotifications(current => ({ ...current, allowed: false }));
         try {
@@ -65,6 +57,7 @@ export default function NotificacoesScreen() {
     setNotifications(current => ({ ...current, [key]: value }));
     setNotice({ message: 'Preferência de notificação atualizada.', tone: 'success' });
   };
+
   return (
     <Screen>
       <Header
