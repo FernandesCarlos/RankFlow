@@ -63,7 +63,8 @@ type PersistedAppState = {
   friendHandles?: string[];
 };
 
-const STORAGE_KEY = '@rankflow:app-state:v1';
+const STORAGE_KEY = '@rankflow:app-state:v2';
+const LEGACY_STORAGE_KEY = '@rankflow:app-state:v1';
 
 function useAppState() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -107,7 +108,9 @@ function useAppState() {
   useEffect(() => {
     async function loadData() {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        const currentSaved = await AsyncStorage.getItem(STORAGE_KEY);
+        const legacySaved = currentSaved ? null : await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+        const saved = currentSaved ?? legacySaved;
         if (saved) {
           const data: PersistedAppState = JSON.parse(saved);
           if (data.profile) {
@@ -129,7 +132,12 @@ function useAppState() {
             setProfile(restoredProfile);
           }
           if (data.notifications) {
-            setNotifications({ ...initialNotifications, ...data.notifications });
+            setNotifications({
+              ...initialNotifications,
+              ...data.notifications,
+              // Versões anteriores ligavam esta opção por padrão, sem registrar token FCM.
+              allowed: legacySaved ? false : (data.notifications.allowed ?? initialNotifications.allowed),
+            });
           }
           if (typeof data.publicProfile === 'boolean') setPublicProfile(data.publicProfile);
           if (data.training && Array.isArray(data.training.problems) && data.training.sessionId) {
@@ -198,9 +206,11 @@ function useAppState() {
       training,
       friendHandles,
     };
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(error => {
-      console.error('Erro ao salvar dados locais:', error);
-    });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      .then(() => AsyncStorage.removeItem(LEGACY_STORAGE_KEY))
+      .catch(error => {
+        console.error('Erro ao salvar dados locais:', error);
+      });
   }, [hydrated, profile, notifications, publicProfile, trainingHistory, training, friendHandles]);
 
   function startTraining(value: Training) {
