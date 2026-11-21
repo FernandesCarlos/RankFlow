@@ -353,6 +353,24 @@ def create_training_session(payload: dict, db: Session = Depends(get_db)):
     db.add(session)
     db.commit()
     db.refresh(session)
+
+    # Agenda uma notificação para cada participante que possui conta RankFlow.
+    if starts_at > now:
+        reminder_at = max(starts_at - timedelta(minutes=15), now)
+        reminders = []
+        for handle in participants:
+            participant_user = db.query(User).filter(User.codeforces_handle == handle).first()
+            if participant_user:
+                reminders.append(TrainingReminder(
+                    session_id=session.id,
+                    user_id=participant_user.id,
+                    scheduled_for=reminder_at,
+                    status="pending",
+                ))
+        if reminders:
+            db.add_all(reminders)
+            db.commit()
+
     return _session_payload(session, db)
 
 
