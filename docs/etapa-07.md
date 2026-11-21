@@ -73,7 +73,7 @@ Fluxo:
 3. Com autorização concedida, o aplicativo obtém o token FCM e o registra no backend em `POST /api/push/register`, associando-o à conta autenticada e à plataforma.
 4. Ao criar um treino com início futuro, o backend grava lembretes na tabela `training_reminders`, programados para 15 minutos antes do início (ou imediatamente quando o treino for agendado para menos de 15 minutos no futuro).
 5. O worker do backend verifica lembretes pendentes a cada 20 segundos e envia a mensagem pelo Firebase Admin SDK. O texto indica o tempo restante até o início.
-6. Ao desativar notificações, o aplicativo remove os dispositivos registrados em `DELETE /api/push/register` e solicita a remoção do token local.
+6. Ao desativar notificações, o aplicativo remove somente o token FCM deste dispositivo em `DELETE /api/push/register`, enviando o token no corpo da requisição; os outros dispositivos da mesma conta continuam registrados.
 7. A renovação do token FCM é observada pelo aplicativo e sincronizada com o backend. Mensagens recebidas em primeiro plano são apresentadas por um alerta; ao tocar em uma notificação, o aplicativo abre a área de Treino.
 
 **Permissões e credenciais:**
@@ -92,7 +92,7 @@ Fluxo:
 - Treino sem dispositivo registrado: o lembrete é marcado como ignorado, sem interromper a criação do treino.
 - Horário de início já passou: o lembrete não é enviado.
 
-O processamento de lembretes roda no processo FastAPI. Em uma implantação com múltiplas instâncias, recomenda-se mover o worker para um serviço dedicado/fila de tarefas, mantendo o controle de concorrência no banco.
+O processamento de lembretes roda no processo FastAPI. O worker recupera registros que ficaram em estado `sending` após reinício do processo. Em uma implantação com múltiplas instâncias, recomenda-se mover o worker para um serviço dedicado/fila de tarefas, mantendo o controle de concorrência no banco.
 
 ### 2.3 Compartilhamento — resultado do treino
 
