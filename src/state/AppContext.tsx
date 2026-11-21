@@ -158,6 +158,7 @@ function useAppState() {
           try {
             const user = await getCurrentUser(token);
             setAuthenticated(true);
+            if (typeof user.public_profile === 'boolean') setPublicProfile(user.public_profile);
             setProfile((current) => ({
               ...current,
               name: user.display_name || current.name,
