@@ -9,6 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Training } from '../services/forms';
 import { clearAuthToken, getCurrentUser, getStoredToken } from '../services/auth';
+import { unregisterPushNotifications } from '../services/pushNotifications';
 
 const initialNotifications = {
   allowed: false,
@@ -237,7 +238,10 @@ function useAppState() {
   }
 
   function signOut() {
-    clearAuthToken().catch(() => undefined);
+    // Remove somente o token deste dispositivo antes de apagar a credencial da conta.
+    void unregisterPushNotifications()
+      .catch((error) => console.warn('Não foi possível remover o dispositivo FCM ao sair:', error))
+      .finally(() => clearAuthToken().catch(() => undefined));
     setAuthenticated(false);
     setProfile({ ...defaultProfile });
     setNotifications(initialNotifications);
