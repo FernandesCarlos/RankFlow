@@ -22,8 +22,12 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://rankflow:${POSTGRES_PASSWORD:-rankflow}@db:5432/rankflow
     ports: ["8000:8000"]
+    volumes:
+      - rankflow-media:/app/uploads
+      - ./backend/secrets:/run/secrets:ro
     depends_on:
       db:
         condition: service_healthy
 volumes:
   rankflow-postgres:
+  rankflow-media:
