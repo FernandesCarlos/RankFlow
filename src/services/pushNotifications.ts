@@ -10,10 +10,10 @@ async function saveTokenOnBackend(token: string): Promise<void> {
   const authToken = await getStoredToken();
   if (!authToken) throw new Error('Entre na sua conta para ativar as notificações.');
 
-  const response = await fetch(\`\${API_BASE_URL}/api/push/register\`, {
+  const response = await fetch(`${API_BASE_URL}/api/push/register`, {
     method: 'POST',
     headers: {
-      Authorization: \`Bearer \${authToken}\`,
+      Authorization: `Bearer ${authToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ token, platform: Platform.OS }),
@@ -94,10 +94,10 @@ export async function unregisterPushNotifications(): Promise<void> {
   }
 
   if (authToken && fcmToken) {
-    const response = await fetch(\`\${API_BASE_URL}/api/push/register\`, {
+    const response = await fetch(`${API_BASE_URL}/api/push/register`, {
       method: 'DELETE',
       headers: {
-        Authorization: \`Bearer \${authToken}\`,
+        Authorization: `Bearer ${authToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ token: fcmToken }),
