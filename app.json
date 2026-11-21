@@ -40,9 +40,6 @@
     },
     "ios": {
       "googleServicesFile": "./GoogleService-Info.plist",
-      "entitlements": {
-        "aps-environment": "development"
-      },
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
