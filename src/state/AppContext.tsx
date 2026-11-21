@@ -11,7 +11,7 @@ import type { Training } from '../services/forms';
 import { clearAuthToken, getCurrentUser, getStoredToken } from '../services/auth';
 
 const initialNotifications = {
-  allowed: true,
+  allowed: false,
   weekly: true,
   contest: true,
   score: true,
