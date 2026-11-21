@@ -513,3 +513,116 @@ async def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
         "ranking": ranking,
         "problemResults": problem_results,
     }
+
+
+@app.post("/api/push/register")
+def register_push_device(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    token = str(payload.get("token", "")).strip()
+    platform = str(payload.get("platform", "unknown")).lower()
+    if not token or len(token) > 4096:
+        raise HTTPException(422, "Token FCM inválido.")
+    if platform not in {"android", "ios"}:
+        raise HTTPException(422, "Plataforma deve ser android ou ios.")
+
+    device = db.query(PushDevice).filter(PushDevice.token == token).first()
+    if device:
+        device.user_id = user.id
+        device.platform = platform
+        device.updated_at = datetime.now(timezone.utc)
+    else:
+        db.add(PushDevice(user_id=user.id, token=token, platform=platform))
+    db.commit()
+    return {"registered": True}
+
+
+@app.delete("/api/push/register")
+def unregister_push_devices(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    db.query(PushDevice).filter(PushDevice.user_id == user.id).delete(synchronize_session=False)
+    db.commit()
+    return {"registered": False}
+
+
+def _dispatch_due_training_reminders():
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+        due = (
+            db.query(TrainingReminder)
+            .filter(
+                TrainingReminder.status == "pending",
+                TrainingReminder.scheduled_for <= now,
+            )
+            .order_by(TrainingReminder.scheduled_for.asc())
+            .with_for_update(skip_locked=True)
+            .limit(100)
+            .all()
+        )
+        reminder_ids = [item.id for item in due]
+        for item in due:
+            item.status = "sending"
+        db.commit()
+
+        for reminder_id in reminder_ids:
+            reminder = db.get(TrainingReminder, reminder_id)
+            if not reminder:
+                continue
+            session = db.get(TrainingSession, reminder.session_id)
+            devices = db.query(PushDevice).filter(PushDevice.user_id == reminder.user_id).all()
+            if not session or not devices:
+                reminder.status = "skipped"
+                reminder.last_error = "Sessão ou dispositivo registrado não encontrado."
+                db.commit()
+                continue
+
+            sent = 0
+            errors = []
+            for device in devices:
+                try:
+                    send_fcm_message(
+                        device.token,
+                        "Seu treino começa em 15 minutos!",
+                        session.title,
+                        {
+                            "type": "training_reminder",
+                            "sessionId": session.id,
+                            "screen": "/treinos/resultado",
+                        },
+                    )
+                    sent += 1
+                except Exception as exc:
+                    errors.append(str(exc)[:500])
+                    message = str(exc).lower()
+                    if "registration-token-not-registered" in message or "unregistered" in message:
+                        db.delete(device)
+
+            reminder.status = "sent" if sent else "failed"
+            reminder.sent_at = datetime.now(timezone.utc) if sent else None
+            reminder.last_error = None if sent else "; ".join(errors)[:1000]
+            db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Falha ao processar lembretes FCM")
+    finally:
+        db.close()
+
+
+async def _reminder_worker():
+    while True:
+        await asyncio.to_thread(_dispatch_due_training_reminders)
+        await asyncio.sleep(20)
+
+
+@app.on_event("startup")
+async def start_reminder_worker():
+    app.state.reminder_worker = asyncio.create_task(_reminder_worker())
+
+
+@app.on_event("shutdown")
+async def stop_reminder_worker():
+    worker = getattr(app.state, "reminder_worker", None)
+    if worker:
+        worker.cancel()
+        try:
+            await worker
+        except asyncio.CancelledError:
+            pass
