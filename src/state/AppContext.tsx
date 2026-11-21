@@ -51,6 +51,7 @@ const defaultProfile = {
   bio: '',
   editBio: '',
   codeforcesHandle: '',
+  avatarUrl: null as string | null,
 };
 
 type PersistedAppState = {
@@ -164,6 +165,7 @@ function useAppState() {
               email: user.email || current.email,
               codeforcesHandle: user.codeforces_handle || current.codeforcesHandle,
               rating: user.rating || current.rating,
+              avatarUrl: user.avatar_url || current.avatarUrl,
             }));
           } catch (error) {
             if (error instanceof Error && error.message === 'SESSION_INVALID') {
