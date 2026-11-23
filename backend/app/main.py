@@ -1,8 +1,14 @@
 import asyncio
+import logging
+from io import BytesIO
+from pathlib import Path
 
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Request
+from fastapi.staticfiles import StaticFiles
+from PIL import Image, ImageOps, UnidentifiedImageError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
@@ -11,10 +17,13 @@ from sqlalchemy import text
 import uuid
 
 from app.core import settings
-from app.database import Base, engine, get_db
-from app.models import User, TrainingSession
+from app.database import Base, engine, get_db, SessionLocal
+from app.models import User, TrainingSession, PushDevice, TrainingReminder
 from app import codeforces
 from app.auth import router as auth_router
+from app.notifications import send_fcm_message
+
+logger = logging.getLogger('rankflow.notifications')
 
 cfg = settings()
 Base.metadata.create_all(bind=engine)
@@ -24,8 +33,13 @@ with engine.begin() as connection:
     connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(256)"))
     connection.execute(text("ALTER TABLE users ALTER COLUMN codeforces_handle DROP NOT NULL"))
     connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS public_profile BOOLEAN NOT NULL DEFAULT TRUE"))
 
-app = FastAPI(title="RankFlow API", version="0.6.0")
+UPLOAD_DIR = Path(cfg.upload_dir)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+app = FastAPI(title="RankFlow API", version="0.7.0")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.add_middleware(
     SessionMiddleware,
     secret_key=cfg.session_secret,
@@ -39,6 +53,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+if cfg.app_env == "production":
+    app.add_middleware(HTTPSRedirectMiddleware)
 app.include_router(auth_router, prefix="/api")
 
 bearer = HTTPBearer()
@@ -78,7 +94,67 @@ def me(user: User = Depends(current_user)):
         "display_name": user.display_name,
         "avatar_url": user.avatar_url,
         "rating": user.rating,
+        "public_profile": user.public_profile,
     }
+
+
+@app.get("/api/users/public/{handle}")
+def public_user_profile(handle: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.codeforces_handle == handle).first()
+    if not user or not user.public_profile:
+        raise HTTPException(404, "Perfil público não encontrado.")
+    return {
+        "display_name": user.display_name,
+        "codeforces_handle": user.codeforces_handle,
+        "avatar_url": user.avatar_url,
+        "rating": user.rating,
+    }
+
+
+@app.put("/api/users/me/profile-visibility")
+def update_profile_visibility(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    is_public = payload.get("is_public")
+    if not isinstance(is_public, bool):
+        raise HTTPException(422, "Informe is_public como booleano.")
+    user.public_profile = is_public
+    db.commit()
+    return {"public_profile": user.public_profile}
+
+
+@app.post("/api/users/me/avatar")
+async def upload_profile_avatar(
+    request: Request,
+    image: UploadFile = File(...),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    if image.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(415, "Envie uma imagem JPEG, PNG ou WebP.")
+    raw = await image.read(5 * 1024 * 1024 + 1)
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(413, "A imagem deve ter no máximo 5 MB.")
+    try:
+        with Image.open(BytesIO(raw)) as source:
+            if source.format not in {"JPEG", "PNG", "WEBP"}:
+                raise HTTPException(415, "Formato de imagem não suportado.")
+            source.verify()
+        with Image.open(BytesIO(raw)) as source:
+            normalized = ImageOps.exif_transpose(source).convert("RGB")
+            normalized.thumbnail((1024, 1024))
+            output = BytesIO()
+            normalized.save(output, format="JPEG", quality=86, optimize=True)
+    except HTTPException:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise HTTPException(422, "O arquivo enviado não é uma imagem válida.")
+
+    target = UPLOAD_DIR / "avatars" / (user.id + ".jpg")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(output.getvalue())
+    base_url = (cfg.public_api_url or str(request.base_url)).rstrip("/")
+    user.avatar_url = base_url + "/uploads/avatars/" + user.id + ".jpg"
+    db.commit()
+    return {"avatar_url": user.avatar_url}
 
 
 @app.get("/api/codeforces/users/{handle}")
@@ -237,7 +313,11 @@ def _session_payload(session: TrainingSession, db: Session):
 
 
 @app.post("/api/trainings")
-def create_training_session(payload: dict, db: Session = Depends(get_db)):
+def create_training_session(
+    payload: dict,
+    db: Session = Depends(get_db),
+    authenticated_user: User = Depends(current_user),
+):
     creator = str(payload.get("creatorHandle", "")).strip()
     participants = list(dict.fromkeys(str(x).strip() for x in payload.get("participants", []) if str(x).strip()))
     problems = payload.get("problems", [])
@@ -280,6 +360,36 @@ def create_training_session(payload: dict, db: Session = Depends(get_db)):
     db.add(session)
     db.commit()
     db.refresh(session)
+
+    # Agenda uma notificação para cada participante que possui conta RankFlow.
+    if starts_at > now:
+        reminder_at = max(starts_at - timedelta(minutes=15), now)
+        reminders = []
+        reminder_user_ids = set()
+
+        # O criador recebe o lembrete mesmo se ainda não vinculou o handle ao cadastro.
+        reminders.append(TrainingReminder(
+            session_id=session.id,
+            user_id=authenticated_user.id,
+            scheduled_for=reminder_at,
+            status="pending",
+        ))
+        reminder_user_ids.add(authenticated_user.id)
+
+        for handle in participants:
+            participant_user = db.query(User).filter(User.codeforces_handle == handle).first()
+            if participant_user and participant_user.id not in reminder_user_ids:
+                reminders.append(TrainingReminder(
+                    session_id=session.id,
+                    user_id=participant_user.id,
+                    scheduled_for=reminder_at,
+                    status="pending",
+                ))
+                reminder_user_ids.add(participant_user.id)
+        if reminders:
+            db.add_all(reminders)
+            db.commit()
+
     return _session_payload(session, db)
 
 
@@ -440,3 +550,157 @@ async def training_scoreboard(session_id: str, db: Session = Depends(get_db)):
         "ranking": ranking,
         "problemResults": problem_results,
     }
+
+
+@app.post("/api/push/register")
+def register_push_device(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    token = str(payload.get("token", "")).strip()
+    platform = str(payload.get("platform", "unknown")).lower()
+    if not token or len(token) > 4096:
+        raise HTTPException(422, "Token FCM inválido.")
+    if platform not in {"android", "ios"}:
+        raise HTTPException(422, "Plataforma deve ser android ou ios.")
+
+    device = db.query(PushDevice).filter(PushDevice.token == token).first()
+    if device:
+        device.user_id = user.id
+        device.platform = platform
+        device.updated_at = datetime.now(timezone.utc)
+    else:
+        db.add(PushDevice(user_id=user.id, token=token, platform=platform))
+    db.commit()
+    return {"registered": True}
+
+
+@app.delete("/api/push/register")
+def unregister_push_device(payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    token = str(payload.get("token", "")).strip()
+    if not token or len(token) > 4096:
+        raise HTTPException(422, "Token FCM inválido.")
+
+    removed = (
+        db.query(PushDevice)
+        .filter(PushDevice.user_id == user.id, PushDevice.token == token)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return {"registered": False, "removed": removed}
+
+
+def _dispatch_due_training_reminders():
+    db = SessionLocal()
+    try:
+        now = datetime.now(timezone.utc)
+        due = (
+            db.query(TrainingReminder)
+            .filter(
+                TrainingReminder.status == "pending",
+                TrainingReminder.scheduled_for <= now,
+            )
+            .order_by(TrainingReminder.scheduled_for.asc())
+            .with_for_update(skip_locked=True)
+            .limit(100)
+            .all()
+        )
+        reminder_ids = [item.id for item in due]
+        for item in due:
+            item.status = "sending"
+        db.commit()
+
+        for reminder_id in reminder_ids:
+            reminder = db.get(TrainingReminder, reminder_id)
+            if not reminder:
+                continue
+            session = db.get(TrainingSession, reminder.session_id)
+            devices = db.query(PushDevice).filter(PushDevice.user_id == reminder.user_id).all()
+            if not session or not devices:
+                reminder.status = "skipped"
+                reminder.last_error = "Sessão ou dispositivo registrado não encontrado."
+                db.commit()
+                continue
+
+            started_at = session.started_at
+            if started_at.tzinfo is None:
+                started_at = started_at.replace(tzinfo=timezone.utc)
+            seconds_until_start = int((started_at - datetime.now(timezone.utc)).total_seconds())
+            if seconds_until_start <= 0:
+                reminder.status = "skipped"
+                reminder.last_error = "O horário de início já passou."
+                db.commit()
+                continue
+            minutes_until_start = max(1, (seconds_until_start + 59) // 60)
+
+            sent = 0
+            errors = []
+            for device in devices:
+                try:
+                    send_fcm_message(
+                        device.token,
+                        session.title,
+                        f"Seu treino começa em {minutes_until_start} minutos!",
+                        {
+                            "type": "training_reminder",
+                            "sessionId": session.id,
+                            "screen": "/treinos/resultado",
+                        },
+                    )
+                    sent += 1
+                except Exception as exc:
+                    errors.append(str(exc)[:500])
+                    message = str(exc).lower()
+                    error_code = str(getattr(exc, "code", "")).lower()
+                    if (
+                        error_code in {
+                            "messaging/registration-token-not-registered",
+                            "messaging/invalid-registration-token",
+                        }
+                        or "registration-token-not-registered" in message
+                    ):
+                        db.delete(device)
+
+            reminder.status = "sent" if sent else "failed"
+            reminder.sent_at = datetime.now(timezone.utc) if sent else None
+            reminder.last_error = None if sent else "; ".join(errors)[:1000]
+            db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Falha ao processar lembretes FCM")
+    finally:
+        db.close()
+
+
+async def _reminder_worker():
+    while True:
+        await asyncio.to_thread(_dispatch_due_training_reminders)
+        await asyncio.sleep(20)
+
+
+@app.on_event("startup")
+async def start_reminder_worker():
+    # Recupera lembretes interrompidos por reinício do processo antes do envio.
+    def recover_interrupted_reminders():
+        db = SessionLocal()
+        try:
+            db.query(TrainingReminder).filter(
+                TrainingReminder.status == "sending"
+            ).update(
+                {TrainingReminder.status: "pending"},
+                synchronize_session=False,
+            )
+            db.commit()
+        finally:
+            db.close()
+
+    await asyncio.to_thread(recover_interrupted_reminders)
+    app.state.reminder_worker = asyncio.create_task(_reminder_worker())
+
+
+@app.on_event("shutdown")
+async def stop_reminder_worker():
+    worker = getattr(app.state, "reminder_worker", None)
+    if worker:
+        worker.cancel()
+        try:
+            await worker
+        except asyncio.CancelledError:
+            pass

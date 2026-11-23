@@ -9,9 +9,10 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Training } from '../services/forms';
 import { clearAuthToken, getCurrentUser, getStoredToken } from '../services/auth';
+import { unregisterPushNotifications } from '../services/pushNotifications';
 
 const initialNotifications = {
-  allowed: true,
+  allowed: false,
   weekly: true,
   contest: true,
   score: true,
@@ -51,6 +52,7 @@ const defaultProfile = {
   bio: '',
   editBio: '',
   codeforcesHandle: '',
+  avatarUrl: null as string | null,
 };
 
 type PersistedAppState = {
@@ -62,7 +64,8 @@ type PersistedAppState = {
   friendHandles?: string[];
 };
 
-const STORAGE_KEY = '@rankflow:app-state:v1';
+const STORAGE_KEY = '@rankflow:app-state:v2';
+const LEGACY_STORAGE_KEY = '@rankflow:app-state:v1';
 
 function useAppState() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -106,7 +109,9 @@ function useAppState() {
   useEffect(() => {
     async function loadData() {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        const currentSaved = await AsyncStorage.getItem(STORAGE_KEY);
+        const legacySaved = currentSaved ? null : await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+        const saved = currentSaved ?? legacySaved;
         if (saved) {
           const data: PersistedAppState = JSON.parse(saved);
           if (data.profile) {
@@ -128,7 +133,12 @@ function useAppState() {
             setProfile(restoredProfile);
           }
           if (data.notifications) {
-            setNotifications({ ...initialNotifications, ...data.notifications });
+            setNotifications({
+              ...initialNotifications,
+              ...data.notifications,
+              // Versões anteriores ligavam esta opção por padrão, sem registrar token FCM.
+              allowed: legacySaved ? false : (data.notifications.allowed ?? initialNotifications.allowed),
+            });
           }
           if (typeof data.publicProfile === 'boolean') setPublicProfile(data.publicProfile);
           if (data.training && Array.isArray(data.training.problems) && data.training.sessionId) {
@@ -157,6 +167,7 @@ function useAppState() {
           try {
             const user = await getCurrentUser(token);
             setAuthenticated(true);
+            if (typeof user.public_profile === 'boolean') setPublicProfile(user.public_profile);
             setProfile((current) => ({
               ...current,
               name: user.display_name || current.name,
@@ -164,6 +175,7 @@ function useAppState() {
               email: user.email || current.email,
               codeforcesHandle: user.codeforces_handle || current.codeforcesHandle,
               rating: user.rating || current.rating,
+              avatarUrl: user.avatar_url || current.avatarUrl,
             }));
           } catch (error) {
             if (error instanceof Error && error.message === 'SESSION_INVALID') {
@@ -195,9 +207,11 @@ function useAppState() {
       training,
       friendHandles,
     };
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(error => {
-      console.error('Erro ao salvar dados locais:', error);
-    });
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      .then(() => AsyncStorage.removeItem(LEGACY_STORAGE_KEY))
+      .catch(error => {
+        console.error('Erro ao salvar dados locais:', error);
+      });
   }, [hydrated, profile, notifications, publicProfile, trainingHistory, training, friendHandles]);
 
   function startTraining(value: Training) {
@@ -224,7 +238,10 @@ function useAppState() {
   }
 
   function signOut() {
-    clearAuthToken().catch(() => undefined);
+    // Remove somente o token deste dispositivo antes de apagar a credencial da conta.
+    void unregisterPushNotifications()
+      .catch((error) => console.warn('Não foi possível remover o dispositivo FCM ao sair:', error))
+      .finally(() => clearAuthToken().catch(() => undefined));
     setAuthenticated(false);
     setProfile({ ...defaultProfile });
     setNotifications(initialNotifications);

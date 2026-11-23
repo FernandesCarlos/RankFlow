@@ -2,6 +2,7 @@ import { useIsFocused } from 'expo-router';
 import React, { ReactNode, useState, useEffect } from 'react';
 import {
   KeyboardAvoidingView,
+  Image,
   Platform,
   AccessibilityInfo,
   ActivityIndicator,
@@ -306,9 +307,11 @@ export function Stat({
 export function Avatar({
   initials = 'CE',
   size = 44,
+  uri,
 }: {
   initials?: string;
   size?: number;
+  uri?: string | null;
 }) {
   return (
     <View
@@ -318,17 +321,22 @@ export function Avatar({
           width: size,
           height: size,
           borderRadius: size / 2,
+          overflow: 'hidden',
         },
       ]}
     >
-      <Text
-        style={[
-          styles.avatarText,
-          { fontSize: Math.max(14, size * 0.32) },
-        ]}
-      >
-        {initials}
-      </Text>
+      {uri ? (
+        <Image
+          source={{ uri }}
+          accessibilityLabel={`Foto de perfil de ${initials}`}
+          resizeMode="cover"
+          style={{ width: size, height: size }}
+        />
+      ) : (
+        <Text style={[styles.avatarText, { fontSize: Math.max(14, size * 0.32) }]}>
+          {initials}
+        </Text>
+      )}
     </View>
   );
 }

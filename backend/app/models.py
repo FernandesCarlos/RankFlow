@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Integer, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import String, Integer, DateTime, ForeignKey, JSON, Text, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,6 +16,7 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(256), nullable=True)
     display_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    public_profile: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -63,3 +64,29 @@ class TrainingSubmission(Base):
     verdict: Mapped[str] = mapped_column(String(32))
     points: Mapped[int] = mapped_column(Integer, default=0)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+
+class PushDevice(Base):
+    __tablename__ = "push_devices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token: Mapped[str] = mapped_column(String(4096), unique=True, index=True)
+    platform: Mapped[str] = mapped_column(String(16), default="unknown")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+class TrainingReminder(Base):
+    __tablename__ = "training_reminders"
+    __table_args__ = (
+        UniqueConstraint("session_id", "user_id", name="uq_training_reminder_session_user"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id: Mapped[str] = mapped_column(ForeignKey("training_sessions.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)

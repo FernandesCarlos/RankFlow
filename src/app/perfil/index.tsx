@@ -82,7 +82,7 @@ export default function PerfilScreen() {
       />
 
       <View style={styles.profile}>
-        <Avatar initials={profile.initials} size={84} />
+        <Avatar initials={profile.initials} uri={profile.avatarUrl} size={84} />
         <Text style={styles.name}>{profile.name}</Text>
         <Text style={styles.handle}>@{profile.codeforcesHandle}</Text>
         <Text style={styles.rank}>

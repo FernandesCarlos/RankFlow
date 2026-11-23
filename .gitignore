@@ -24,3 +24,10 @@ backend/.env
 
 # Keep the mobile environment template versioned
 !.env.example
+# Firebase credentials and generated user uploads
+backend/secrets/*.json
+backend/firebase-service-account.json
+backend/uploads/
+# Firebase native configuration (downloaded from Firebase Console)
+/google-services.json
+/GoogleService-Info.plist

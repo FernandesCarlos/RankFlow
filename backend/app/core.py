@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     codeforces_callback_url: str = "http://localhost:8000/api/auth/codeforces/callback"
     mobile_redirect_uri: str = "rankflow://auth/callback"
     cors_origins: str = "http://localhost:8081"
+    public_api_url: str = ""
+    upload_dir: str = "/app/uploads"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     @property
     def origins(self): return [x.strip() for x in self.cors_origins.split(",") if x.strip()]

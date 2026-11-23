@@ -1,5 +1,6 @@
 import { goBack } from '../../navigation/actions';
 import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import {
@@ -9,12 +10,14 @@ import {
   Header,
   InfoBox,
   PrimaryButton,
+  OutlineButton,
   Screen,
   TextButton,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
 import { useApp } from '../../state/AppContext';
 import { validateProfile } from '../../services/forms';
+import { uploadProfileAvatar } from '../../services/profileApi';
 
 export default function EditarPerfilScreen() {
   const { profile, setProfile, setNotice } = useApp();
@@ -24,6 +27,36 @@ export default function EditarPerfilScreen() {
   const [email, setEmail] = useState(profile.email);
   const [bio, setBio] = useState(profile.bio);
   const [handle, setHandle] = useState(profile.codeforcesHandle);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  async function selectProfilePhoto() {
+    setError('');
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError('Permissão da galeria negada. Habilite o acesso às fotos nos Ajustes do dispositivo.');
+        return;
+      }
+
+      const selection = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.82,
+        base64: false,
+      });
+      if (selection.canceled || !selection.assets[0]?.uri) return;
+
+      setUploadingPhoto(true);
+      const uploaded = await uploadProfileAvatar(selection.assets[0].uri);
+      setProfile(current => ({ ...current, avatarUrl: uploaded.avatar_url }));
+      setNotice({ message: 'Foto de perfil sincronizada com sua conta.', tone: 'success' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível selecionar ou enviar a foto.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   return (
     <Screen>
@@ -34,17 +67,21 @@ export default function EditarPerfilScreen() {
       />
 
       <Card style={styles.photoCard}>
-        <Avatar initials={profile.initials} size={66} />
+        <Avatar initials={profile.initials} size={66} uri={profile.avatarUrl} />
 
         <View style={{ flex: 1 }}>
           <Text style={styles.photoTitle}>Foto do perfil</Text>
           <Text style={styles.photoDescription}>
-            Avatar gerado a partir das iniciais do nome
+            Escolha uma imagem da galeria para sincronizar seu perfil
           </Text>
         </View>
-
-
       </Card>
+      <OutlineButton
+        title={uploadingPhoto ? 'Enviando foto...' : 'Selecionar foto da galeria'}
+        onPress={selectProfilePhoto}
+        loading={uploadingPhoto}
+        disabled={uploadingPhoto}
+      />
 
       <Field label="Nome" value={nome} onChangeText={setNome} />
       <Field

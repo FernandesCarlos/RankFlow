@@ -38,7 +38,7 @@ export default function EstatisticasScreen() {
 
   return (
     <Screen>
-      <Header title="Estatísticas" onBack={() => router.back()} right={<Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}><Avatar initials={profile.initials} size={38} /></Pressable>} />
+      <Header title="Estatísticas" onBack={() => router.back()} right={<Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}><Avatar initials={profile.initials} uri={profile.avatarUrl} size={38} /></Pressable>} />
       <Text style={styles.title}>Estatísticas</Text>
       <Text style={styles.subtitle}>Dados consultados diretamente no Codeforces.</Text>
 

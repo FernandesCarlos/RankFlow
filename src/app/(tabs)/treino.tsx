@@ -185,7 +185,7 @@ export default function TreinoScreen() {
           <Text style={styles.subtitle}>Monte uma lista com problemas reais do Codeforces</Text>
         </View>
         <AccessiblePressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
-          <Avatar initials={profile.initials} />
+          <Avatar initials={profile.initials} uri={profile.avatarUrl} />
         </AccessiblePressable>
       </View>
 

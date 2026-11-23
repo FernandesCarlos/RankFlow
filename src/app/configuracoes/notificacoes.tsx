@@ -1,9 +1,8 @@
 import { ToggleRow as Toggle } from '../../components/ToggleRow';
 import { useApp } from '../../state/AppContext';
 import { goBack } from '../../navigation/actions';
-import React, { useState } from 'react';
-import { router } from 'expo-router';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import {
   Card,
   Divider,
@@ -11,14 +10,34 @@ import {
   Screen,
 } from '../../components/ui';
 import { colors } from '../../theme/colors';
+import { unregisterPushNotifications } from '../../services/pushNotifications';
 
 export default function NotificacoesScreen() {
   const { notifications, setNotifications, setNotice } = useApp();
   const { allowed, weekly, contest, score, result, friends, invites, quiet } = notifications;
-  const update = (key: keyof typeof notifications, value: boolean) => {
+  const update = async (key: keyof typeof notifications, value: boolean) => {
+    if (key === 'allowed') {
+      if (value) {
+        setNotifications(current => ({ ...current, allowed: true }));
+        return;
+      }
+
+      try {
+        await unregisterPushNotifications();
+        setNotifications(current => ({ ...current, allowed: false }));
+        setNotice({ message: 'Notificações desativadas neste dispositivo.', tone: 'info' });
+      } catch (error) {
+        setNotice({
+          message: error instanceof Error ? error.message : 'Não foi possível remover o registro FCM.',
+          tone: 'danger',
+        });
+      }
+      return;
+    }
     setNotifications(current => ({ ...current, [key]: value }));
-    setNotice({ message: 'Preferência atualizada nesta sessão. Nenhuma notificação real será enviada.', tone: 'success' });
+    setNotice({ message: 'Preferência de notificação atualizada.', tone: 'success' });
   };
+
   return (
     <Screen>
       <Header

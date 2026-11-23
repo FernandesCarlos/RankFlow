@@ -4,23 +4,27 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Avatar, Card, Header, InfoBox, Screen, Stat, SectionTitle } from '../../components/ui';
 import { LoadingSkeleton } from '../../components/LoadingSkeleton';
 import { getCodeforcesSummary, type CodeforcesSummary } from '../../services/codeforcesApi';
+import { getPublicAccountProfile, type PublicAccountProfile } from '../../services/profileApi';
 import { colors } from '../../theme/colors';
 
 export default function AmigoScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const normalizedHandle = Array.isArray(handle) ? handle[0] : handle;
   const [data, setData] = useState<CodeforcesSummary | null>(null);
+  const [rankflowProfile, setRankflowProfile] = useState<PublicAccountProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
+    setRankflowProfile(null);
     if (!normalizedHandle) {
       setError('Handle não informado.');
       setLoading(false);
       return;
     }
     setLoading(true);
+    getPublicAccountProfile(normalizedHandle).then((profile) => { if (active) setRankflowProfile(profile); }).catch(() => undefined);
     getCodeforcesSummary(normalizedHandle)
       .then((result) => { if (active) { setData(result); setError(''); } })
       .catch((err) => { if (active) setError(err instanceof Error ? err.message : 'Não foi possível carregar o perfil.'); })
@@ -35,7 +39,7 @@ export default function AmigoScreen() {
       {error ? <InfoBox tone="danger">{error}</InfoBox> : null}
       {!loading && data ? <>
         <Card style={styles.profile}>
-          <Avatar initials={(data.user.handle ?? normalizedHandle).slice(0, 2).toUpperCase()} size={68} />
+          <Avatar initials={(data.user.handle ?? normalizedHandle).slice(0, 2).toUpperCase()} size={68} uri={rankflowProfile?.avatar_url} />
           <Text accessibilityRole="header" style={styles.handle}>{data.user.handle}</Text>
           <Text style={styles.rank}>{data.user.rank ?? 'Unrated'}</Text>
           <Text style={styles.caption}>Conta Codeforces</Text>

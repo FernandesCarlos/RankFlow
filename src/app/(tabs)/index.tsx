@@ -39,7 +39,7 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>Seu desempenho no Codeforces</Text>
         </View>
         <Pressable accessibilityLabel="Abrir meu perfil" onPress={() => router.push('/perfil')}>
-          <Avatar initials={profile.initials} size={40} />
+          <Avatar initials={profile.initials} uri={profile.avatarUrl} size={40} />
         </Pressable>
       </View>
 
